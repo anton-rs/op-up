@@ -1,21 +1,17 @@
-use std::{path::Path, process::Command};
+use std::{fs::create_dir_all, path::Path};
 
 use eyre::Result;
-use inquire::{Confirm, Select};
+use inquire::Confirm;
 
 mod items;
 mod utils;
-
-macro_rules! make_selection {
-    ($name:ident, $prompt:expr, $options:expr) => {
-        let $name = Select::new($prompt, $options).prompt()?.to_string();
-    };
-}
 
 fn main() -> Result<()> {
     println!("\nWelcome to the op-up CLI!");
     println!("(This is a work in progress, some things may not work as expected)");
     println!("---------------------------------------------------\n");
+
+    create_dir_all("../.devnet")?;
 
     if Path::new("../.stack").exists() {
         println!("Looks like you've already got an existing op-stack loaded!");
@@ -29,7 +25,7 @@ fn main() -> Result<()> {
                 println!("\nGreat! We'll use the existing stack.");
                 println!("---------------------------------------------------\n");
 
-                return Ok(()); // todo
+                return Ok(()); // TODO
             }
             false => {
                 println!("\nOk, we'll start from scratch then.");
@@ -42,25 +38,14 @@ fn main() -> Result<()> {
     // if not, clone them from github with the --no-checkout flag
     if !Path::new("../optimism").exists() {
         println!("Cloning the optimism monorepo from github...");
-        Command::new("git")
-            .args([
-                "clone",
-                "--no-checkout",
-                "git@github.com:ethereum-optimism/optimism.git",
-            ])
-            .output()
-            .expect("Failed to clone repository");
+        git_clone!(
+            "--no-checkout",
+            "git@github.com:ethereum-optimism/optimism.git"
+        );
     }
     if !Path::new("../optimism-rs").exists() {
         println!("Cloning the optimism-rs monorepo from github...");
-        Command::new("git")
-            .args([
-                "clone",
-                "--no-checkout",
-                "git@github.com:refcell/optimism-rs.git",
-            ])
-            .output()
-            .expect("Failed to execute process");
+        git_clone!("--no-checkout", "git@github.com:refcell/optimism-rs.git");
     }
 
     make_selection!(
