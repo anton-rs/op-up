@@ -1,4 +1,7 @@
 target/
+optimism/
+optimism-rs/
 
 .env
 .devnet
+.stack
