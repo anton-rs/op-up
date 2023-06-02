@@ -19,11 +19,34 @@ macro_rules! make_selection {
 
 #[macro_export]
 macro_rules! git_clone {
-    ($options:expr, $repo:expr) => {
+    ($pwd:expr, $options:expr, $repo:expr) => {
         std::process::Command::new("git")
             .args(["clone", $options, $repo])
+            .current_dir($pwd)
             .output()
-            .expect("Failed to clone repository from git");
+            .expect(format!("Failed to clone repository {} from git", $repo).as_str());
+    };
+}
+
+#[macro_export]
+macro_rules! git_sparse_checkout {
+    ($dir:expr, $cmd:expr, $options:expr) => {
+        std::process::Command::new("git")
+            .args(["sparse-checkout", $cmd, $options])
+            .current_dir($dir)
+            .output()
+            .expect(format!("Failed to checkout {} from git", $options).as_str());
+    };
+}
+
+#[macro_export]
+macro_rules! make_executable {
+    ($path:expr) => {
+        let path_str = $path.to_str().expect("Failed to convert path to string");
+        std::process::Command::new("chmod")
+            .args(["+x", path_str])
+            .output()
+            .expect(format!("Failed to make script {:?} executable", $path).as_str());
     };
 }
 
@@ -52,7 +75,7 @@ pub fn read_stack_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     })
 }
 
-pub fn write_stack_to_file(file: &PathBuf, stack: OpStackConfig) -> Result<()> {
+pub fn write_stack_to_file(file: &PathBuf, stack: &OpStackConfig) -> Result<()> {
     let file = File::create(file)?;
     let mut writer = BufWriter::new(file);
 
