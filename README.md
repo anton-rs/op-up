@@ -11,11 +11,12 @@ This project was born out of the need to test out [Magi](https://github.com/a16z
 ## Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install)
-- TODO: complete list
+- TODO: write complete list
 
 ## Usage
 
-Clone this repository and run the following command. If all goes well, you should be able to continue with the setup in the terminal.
+Clone this repository and run the following command.
+If all goes well, you should be able to continue with the setup in the terminal.
 
 ```
 cd cli && cargo run
