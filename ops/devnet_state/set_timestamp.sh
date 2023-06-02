@@ -4,6 +4,7 @@ set -e
 
 TIMESTAMP_UNIX=$(date +%s | xargs printf '%d')
 TIMESTAMP=$(date +%s | xargs printf '0x%x')
+
 echo "Setting devnet timestamp to the current date"
 
 mkdir -p $OP_UP_DIR/.devnet/state
