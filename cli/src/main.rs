@@ -1,9 +1,12 @@
 use std::{env::current_dir, fmt::Display, fs::remove_file, path::Path, process::Command};
 
-use eyre::{bail, eyre, Result};
+use eyre::{eyre, Result};
 use inquire::Confirm;
 
+use crate::stack::{ChallengerAgent, L1Client, L2Client, RollupClient};
+
 mod constants;
+mod stack;
 mod utils;
 
 fn main() -> Result<()> {
@@ -32,6 +35,10 @@ fn main() -> Result<()> {
     // Files referenced
     let stack_file = op_up_dir.join(".stack");
     let set_timestamp_script = ops_dir.join("devnet_state").join("set_timestamp.sh");
+
+    // ----------------------------------------
+    // Create a new op-stack config object from user choices
+    // (or load an existing one from the .stack file if it exists)
 
     let op_stack_config = if stack_file.exists() {
         let existing_stack = utils::read_stack_from_file(&stack_file)?;
@@ -73,6 +80,7 @@ fn main() -> Result<()> {
     // ----------------------------------------
     // Based on the components selected, pull the appropriate packages
     // from the op-monorepo and op-rs-monorepo using the `sparse-checkout` git feature
+
     println!("Pulling the selected components from github...");
 
     utils::git_sparse_checkout(&op_monorepo_dir, "init", "--cone")?;
@@ -81,48 +89,56 @@ fn main() -> Result<()> {
     // These components are always pulled as they are required.
     // If in the future there will be more versions of these components,
     // they should become configurable as well, with the rest of the stack
-    utils::git_sparse_checkout(&op_monorepo_dir, "add", "packages/contracts-bedrock")?;
-    utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-node")?;
     utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-proposer")?;
     utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-batcher")?;
     utils::git_sparse_checkout(&op_monorepo_dir, "add", "ops-bedrock")?;
+    // utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-node")?;
+    // utils::git_sparse_checkout(&op_monorepo_dir, "add", "packages/contracts-bedrock")?;
 
-    match op_stack_config.l1_client.as_str() {
-        constants::GETH => {}
-        constants::ERIGON => {}
-        _ => bail!("Invalid L1 client found in stack"),
+    match op_stack_config.l1_client {
+        L1Client::Geth => { /* No extra dependencies needed */ }
+        L1Client::Erigon => { /* No extra dependencies needed */ }
     }
 
-    match op_stack_config.l2_client.as_str() {
-        constants::OP_GETH => {}
-        constants::OP_ERIGON => {}
-        _ => bail!("Invalid L2 client found in stack"),
+    match op_stack_config.l2_client {
+        L2Client::OpGeth => { /* No extra dependencies needed */ }
+        L2Client::OpErigon => { /* No extra dependencies needed */ }
     }
 
-    match op_stack_config.rollup_client.as_str() {
-        constants::OP_NODE => {}
-        constants::MAGI => utils::git_clone(op_up_dir, "full", constants::MAGI_REPO_URL)?,
-        _ => bail!("Invalid rollup client found in stack"),
+    match op_stack_config.rollup_client {
+        RollupClient::OpNode => utils::git_sparse_checkout(&op_rs_monorepo_dir, "add", "op-node")?,
+        RollupClient::Magi => utils::git_clone(op_up_dir, "full", constants::MAGI_REPO_URL)?,
     }
 
-    match op_stack_config.challenger_agent.as_str() {
-        constants::OP_CHALLENGER_GO => {}
-        constants::OP_CHALLENGER_RUST => {
-            utils::git_clone(op_up_dir, "full", constants::OP_CHALLENGER_RUST_REPO_URL)?
+    match op_stack_config.challenger_agent {
+        ChallengerAgent::OpChallengerGo => {
+            utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-challenger")?;
         }
-        _ => bail!("Invalid challenger agent found in stack"),
+        ChallengerAgent::OpChallengerRust => {
+            utils::git_clone(op_up_dir, "full", constants::OP_CHALLENGER_RUST_REPO_URL)?;
+        }
     }
 
-    // Actually pull the components added via sparse-checkout
-    let checkout_components = Command::new("git")
+    // Finally pull the components added via sparse-checkout
+    let op_checkout_components = Command::new("git")
         .arg("checkout")
         .current_dir(&op_monorepo_dir)
         .output()?;
-
     utils::check_command(
-        checkout_components,
+        op_checkout_components,
         &format!("Failed git checkout in {:?}", op_monorepo_dir),
     )?;
+    let op_rs_checkout_components = Command::new("git")
+        .arg("checkout")
+        .current_dir(&op_rs_monorepo_dir)
+        .output()?;
+    utils::check_command(
+        op_rs_checkout_components,
+        &format!("Failed git checkout in {:?}", op_rs_monorepo_dir),
+    )?;
+
+    // ----------------------------------------
+    // Build the devnet
 
     println!("Components successfully pulled! Building devnet...");
 
@@ -131,7 +147,6 @@ fn main() -> Result<()> {
     let update_timestamps = Command::new(set_timestamp_script)
         .env("OP_UP_DIR", op_up_dir.to_str().unwrap())
         .output()?;
-
     utils::check_command(update_timestamps, "Failed to update devnet genesis files")?;
 
     Ok(())
@@ -142,10 +157,10 @@ fn main() -> Result<()> {
 /// Struct to hold the user's choices for the op-stack components
 /// that they want to use for their devnet
 pub struct OpStackConfig {
-    l1_client: String,
-    l2_client: String,
-    rollup_client: String,
-    challenger_agent: String,
+    l1_client: L1Client,
+    l2_client: L2Client,
+    rollup_client: RollupClient,
+    challenger_agent: ChallengerAgent,
 }
 
 impl Display for OpStackConfig {
@@ -167,34 +182,34 @@ impl OpStackConfig {
         make_selection!(
             l1_client,
             "Which L1 execution client would you like to use?",
-            vec![constants::GETH, constants::ERIGON]
+            vec![stack::GETH, stack::ERIGON]
         );
 
         make_selection!(
             l2_client,
             "Which L2 execution client would you like to use?",
-            vec![constants::OP_GETH, constants::OP_ERIGON]
+            vec![stack::OP_GETH, stack::OP_ERIGON]
         );
 
         make_selection!(
             rollup_client,
             "Which rollup client would you like to use?",
-            vec![constants::OP_NODE, constants::MAGI]
+            vec![stack::OP_NODE, stack::MAGI]
         );
 
         make_selection!(
             challenger_agent,
             "Which challenger agent would you like to use?",
-            vec![constants::OP_CHALLENGER_GO, constants::OP_CHALLENGER_RUST]
+            vec![stack::OP_CHALLENGER_GO, stack::OP_CHALLENGER_RUST]
         );
 
         println!("\nNice choice! You've got great taste ✨");
 
         Ok(OpStackConfig {
-            l1_client,
-            l2_client,
-            rollup_client,
-            challenger_agent,
+            l1_client: l1_client.parse()?,
+            l2_client: l2_client.parse()?,
+            rollup_client: rollup_client.parse()?,
+            challenger_agent: challenger_agent.parse()?,
         })
     }
 }

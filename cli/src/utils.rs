@@ -107,19 +107,23 @@ pub fn read_stack_from_file(file: &PathBuf) -> Result<OpStackConfig> {
         l1_client: lines
             .get(0)
             .ok_or(eyre!("expected l1_client at line 1"))?
-            .to_string(),
+            .to_string()
+            .parse()?,
         l2_client: lines
             .get(1)
             .ok_or(eyre!("expected l2_client at line 2"))?
-            .to_string(),
+            .to_string()
+            .parse()?,
         rollup_client: lines
             .get(2)
             .ok_or(eyre!("expected rollup_client at line 3"))?
-            .to_string(),
+            .to_string()
+            .parse()?,
         challenger_agent: lines
             .get(3)
             .ok_or(eyre!("expected challenger_agent at line 4"))?
-            .to_string(),
+            .to_string()
+            .parse()?,
     })
 }
 
@@ -128,22 +132,22 @@ pub fn write_stack_to_file(file: &PathBuf, stack: &OpStackConfig) -> Result<()> 
     let mut writer = BufWriter::new(file);
 
     let mut line = String::new();
-    line.push_str(&stack.l1_client);
+    line.push_str(&stack.l1_client.to_string());
     line.push('\n');
     writer.write_all(line.as_bytes())?;
 
     let mut line = String::new();
-    line.push_str(&stack.l2_client);
+    line.push_str(&stack.l2_client.to_string());
     line.push('\n');
     writer.write_all(line.as_bytes())?;
 
     let mut line = String::new();
-    line.push_str(&stack.rollup_client);
+    line.push_str(&stack.rollup_client.to_string());
     line.push('\n');
     writer.write_all(line.as_bytes())?;
 
     let mut line = String::new();
-    line.push_str(&stack.challenger_agent);
+    line.push_str(&stack.challenger_agent.to_string());
     line.push('\n');
     writer.write_all(line.as_bytes())?;
 
