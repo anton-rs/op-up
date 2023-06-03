@@ -3,7 +3,10 @@ use std::{env::current_dir, fmt::Display, fs::remove_file, path::Path, process::
 use eyre::{eyre, Result};
 use inquire::Confirm;
 
-use crate::stack::{ChallengerAgent, L1Client, L2Client, RollupClient};
+use crate::{
+    stack::{ChallengerAgent, L1Client, L2Client, RollupClient},
+    utils::GitCloneMethod,
+};
 
 mod constants;
 mod stack;
@@ -29,6 +32,7 @@ fn main() -> Result<()> {
 
     // Directories referenced
     let ops_dir = op_up_dir.join("ops");
+    let docker_dir = ops_dir.join("docker");
     let op_monorepo_dir = op_up_dir.join("optimism");
     let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
@@ -70,11 +74,19 @@ fn main() -> Result<()> {
     // If not, shallow-clone them from github with the `--no-checkout` flag
     if !Path::new(&op_monorepo_dir).exists() {
         println!("Cloning the optimism monorepo from github...");
-        utils::git_clone(op_up_dir, "shallow", constants::OP_MONOREPO_URL)?;
+        utils::git_clone(
+            op_up_dir,
+            GitCloneMethod::Shallow,
+            constants::OP_MONOREPO_URL,
+        )?;
     }
     if !Path::new(&op_rs_monorepo_dir).exists() {
         println!("Cloning the optimism-rs monorepo from github...");
-        utils::git_clone(op_up_dir, "shallow", constants::OP_RS_MONOREPO_URL)?;
+        utils::git_clone(
+            op_up_dir,
+            GitCloneMethod::Shallow,
+            constants::OP_RS_MONOREPO_URL,
+        )?;
     }
 
     // ----------------------------------------
@@ -107,7 +119,9 @@ fn main() -> Result<()> {
 
     match op_stack_config.rollup_client {
         RollupClient::OpNode => utils::git_sparse_checkout(&op_rs_monorepo_dir, "add", "op-node")?,
-        RollupClient::Magi => utils::git_clone(op_up_dir, "full", constants::MAGI_REPO_URL)?,
+        RollupClient::Magi => {
+            utils::git_clone(op_up_dir, GitCloneMethod::Full, constants::MAGI_REPO_URL)?
+        }
     }
 
     match op_stack_config.challenger_agent {
@@ -115,7 +129,11 @@ fn main() -> Result<()> {
             utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-challenger")?;
         }
         ChallengerAgent::OpChallengerRust => {
-            utils::git_clone(op_up_dir, "full", constants::OP_CHALLENGER_RUST_REPO_URL)?;
+            utils::git_clone(
+                op_up_dir,
+                GitCloneMethod::Full,
+                constants::OP_CHALLENGER_RUST_REPO_URL,
+            )?;
         }
     }
 
@@ -148,6 +166,48 @@ fn main() -> Result<()> {
         .env("OP_UP_DIR", op_up_dir.to_str().unwrap())
         .output()?;
     utils::check_command(update_timestamps, "Failed to update devnet genesis files")?;
+
+    println!("You may need to enter your password to run docker-compose as sudo.");
+
+    // // Build the docker images
+    // let docker_build = Command::new("docker-compose")
+    //     .arg("build")
+    //     .arg("")
+    //     .arg("--progress")
+    //     .arg("plain")
+    //     .env("DOCKER_BUILDKIT", "1")
+    //     .env("L2OO_ADDRESS", constants::L2OO_ADDRESS)
+    //     .env("PWD", docker_dir.to_str().unwrap())
+    //     .current_dir(&docker_dir)
+    //     .output()?;
+    // utils::check_command(docker_build, "Failed to build docker images")?;
+
+    // Bring up the L1
+    match op_stack_config.l1_client {
+        L1Client::Geth => {
+            println!("Bringing up geth...");
+            let geth_up = Command::new("docker-compose")
+                .arg("up")
+                .arg("--detach")
+                .arg("--no-deps")
+                .arg("--build")
+                .arg("l1_geth")
+                .env("L2OO_ADDRESS", constants::L2OO_ADDRESS)
+                .current_dir(&docker_dir)
+                .output()?;
+
+            dbg!(geth_up.clone());
+            utils::check_command(geth_up, "Failed to bring up geth")?;
+        }
+        L1Client::Erigon => {
+            println!("Bringing up erigon...");
+            todo!();
+        }
+    };
+
+    // Wait for the L1 to be ready
+    println!("Waiting for the L1 to be ready...");
+    utils::wait_for_response(constants::L1_URL)?;
 
     Ok(())
 }

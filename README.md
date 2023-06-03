@@ -28,6 +28,12 @@ Clone this repository and run the following command from the root directory:
 make devnet
 ```
 
+In some cases, you might need to run the command with `sudo` to access `docker-compose` commands:
+
+```sh
+sudo make devnet
+```
+
 ## Bugs & Contributions
 
 Please report any bugs or issues you encounter by opening an issue on GitHub. <br />

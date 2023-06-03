@@ -1,0 +1,9 @@
+FROM us-docker.pkg.dev/oplabs-tools-artifacts/images/op-geth:optimism
+
+RUN apk add --no-cache jq
+
+COPY geth-entrypoint.sh /geth-entrypoint.sh
+
+VOLUME ["/db"]
+
+ENTRYPOINT ["/bin/sh", "/geth-entrypoint.sh"]

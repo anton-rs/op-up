@@ -24,16 +24,6 @@ pub enum GitCloneMethod {
     Full,
 }
 
-impl From<&str> for GitCloneMethod {
-    fn from(s: &str) -> Self {
-        match s {
-            "shallow" => GitCloneMethod::Shallow,
-            "full" => GitCloneMethod::Full,
-            _ => panic!("Invalid git clone method"),
-        }
-    }
-}
-
 pub fn git_clone<M: Into<GitCloneMethod>>(pwd: &Path, method: M, repo: &str) -> Result<()> {
     match method.into() {
         GitCloneMethod::Full => {
@@ -93,6 +83,20 @@ pub fn check_command(out: Output, err: &str) -> Result<()> {
             err,
             String::from_utf8_lossy(&out.stderr)
         );
+    }
+
+    Ok(())
+}
+
+pub fn wait_for_response(url: &str) -> Result<()> {
+    loop {
+        match reqwest::blocking::get(url) {
+            Ok(_) => break,
+            Err(_) => {
+                println!("Waiting for response from {}", url);
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        }
     }
 
     Ok(())
