@@ -1,10 +1,11 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
+    process::{Command, Output},
 };
 
-use eyre::{eyre, Result};
+use eyre::{bail, eyre, Result};
 
 use crate::OpStackConfig;
 
@@ -18,37 +19,83 @@ macro_rules! make_selection {
     };
 }
 
-#[macro_export]
-macro_rules! git_clone {
-    ($pwd:expr, $options:expr, $repo:expr) => {
-        std::process::Command::new("git")
-            .args(["clone", $options, $repo])
-            .current_dir($pwd)
-            .output()
-            .expect(format!("Failed to clone repository {} from git", $repo).as_str());
-    };
+pub enum GitCloneMethod {
+    Shallow,
+    Full,
 }
 
-#[macro_export]
-macro_rules! git_sparse_checkout {
-    ($dir:expr, $cmd:expr, $options:expr) => {
-        std::process::Command::new("git")
-            .args(["sparse-checkout", $cmd, $options])
-            .current_dir($dir)
-            .output()
-            .expect(format!("Failed to checkout {} from git", $options).as_str());
-    };
+impl From<&str> for GitCloneMethod {
+    fn from(s: &str) -> Self {
+        match s {
+            "shallow" => GitCloneMethod::Shallow,
+            "full" => GitCloneMethod::Full,
+            _ => panic!("Invalid git clone method"),
+        }
+    }
 }
 
-#[macro_export]
-macro_rules! make_executable {
-    ($path:expr) => {
-        let path_str = $path.to_str().expect("Failed to convert path to string");
-        std::process::Command::new("chmod")
-            .args(["+x", path_str])
-            .output()
-            .expect(format!("Failed to make script {:?} executable", $path).as_str());
-    };
+pub fn git_clone<M: Into<GitCloneMethod>>(pwd: &Path, method: M, repo: &str) -> Result<()> {
+    match method.into() {
+        GitCloneMethod::Full => {
+            let out = Command::new("git")
+                .arg("clone")
+                .arg(repo)
+                .current_dir(pwd)
+                .output()?;
+
+            check_command(out, &format!("Failed full clone {} in {:?}", repo, pwd))?;
+        }
+        GitCloneMethod::Shallow => {
+            let out = Command::new("git")
+                .arg("clone")
+                .arg("--no-checkout")
+                .arg("--filter=blob:none")
+                .arg("--depth")
+                .arg("1")
+                .arg("--sparse")
+                .arg(repo)
+                .current_dir(pwd)
+                .output()?;
+
+            check_command(out, &format!("Failed shallow clone {} in {:?}", repo, pwd))?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn git_sparse_checkout(dir: &Path, cmd: &str, options: &str) -> Result<()> {
+    let out = Command::new("git")
+        .arg("sparse-checkout")
+        .arg(cmd)
+        .arg(options)
+        .current_dir(dir)
+        .output()?;
+
+    check_command(out, &format!("Failed sparse-checkout {} {}", cmd, options))?;
+
+    Ok(())
+}
+
+pub fn make_executable(path: &Path) -> Result<()> {
+    let path_str = path.to_str().expect("Failed to convert path to string");
+    let out = Command::new("chmod").args(["+x", path_str]).output()?;
+
+    check_command(out, &format!("Failed to make {} executable", path_str))?;
+
+    Ok(())
+}
+
+pub fn check_command(out: Output, err: &str) -> Result<()> {
+    if !out.status.success() {
+        bail!(
+            "Failed to run command: {}: {}",
+            err,
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    Ok(())
 }
 
 pub fn read_stack_from_file(file: &PathBuf) -> Result<OpStackConfig> {
@@ -59,19 +106,19 @@ pub fn read_stack_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     Ok(OpStackConfig {
         l1_client: lines
             .get(0)
-            .ok_or(eyre!("invalid l1_client found"))?
+            .ok_or(eyre!("expected l1_client at line 1"))?
             .to_string(),
         l2_client: lines
             .get(1)
-            .ok_or(eyre!("invalid l2_client found"))?
+            .ok_or(eyre!("expected l2_client at line 2"))?
             .to_string(),
         rollup_client: lines
             .get(2)
-            .ok_or(eyre!("invalid rollup_client found"))?
+            .ok_or(eyre!("expected rollup_client at line 3"))?
             .to_string(),
         challenger_agent: lines
             .get(3)
-            .ok_or(eyre!("invalid challenger_agent found"))?
+            .ok_or(eyre!("expected challenger_agent at line 4"))?
             .to_string(),
     })
 }
