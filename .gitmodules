@@ -1,0 +1,6 @@
+[submodule "optimism"]
+	path = optimism
+	url = https://github.com/ethereum-optimism/optimism.git
+[submodule "optimism-rs"]
+	path = optimism-rs
+	url = https://github.com/refcell/optimism-rs.git
