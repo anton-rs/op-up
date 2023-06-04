@@ -237,6 +237,18 @@ fn main() -> Result<()> {
         .output()?;
     utils::check_command(start_batcher, "Failed to start batcher")?;
 
+    // Step 10.
+    // Start stateviz
+    let start_stateviz = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "stateviz"])
+        .env("PWD", docker_dir.to_str().unwrap())
+        .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_stateviz, "Failed to start stateviz")?;
+
+    // Done!
+
     println!("\n--------------------------");
     println!("Devnet built successfully!");
     println!("L1 endpoint: {}", constants::L1_URL);
