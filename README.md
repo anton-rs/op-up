@@ -33,16 +33,11 @@ You need to have [Rust](https://www.rust-lang.org/tools/install), [Docker](https
 
 ## Usage
 
-Clone this repository and run the following command from the root directory:
+To get started with the interactive prompt, run the following commands:
 
 ```sh
+git clone git@github.com:merklefruit/op-up.git && cd op-up
 make devnet
-```
-
-In some cases, you might need to give admin permissions. In that case, run:
-
-```sh
-sudo make devnet
 ```
 
 Once the devnet is up and running, L1 is accessible at `http://localhost:8545`, and L2 is accessible at `http://localhost:9545`.
@@ -64,11 +59,17 @@ To stop the devnet, run:
 make devnet-stop
 ```
 
-To reset the OP-Up repository to its initial state, run:
+To reset the devnet state, run:
 
 ```sh
 make nuke
 ```
+
+## Troubleshooting
+
+- If you are getting some "permission denied" errors, it's likely that you need to change the Docker permissions on your machine. See [this guide](https://docs.docker.com/engine/install/linux-postinstall/) for more details.
+- If you are getting the error: `Failed to install dependencies: error hardhat@2.9.6: The engine "node" is incompatible with this module.` you need to switch your NodeJS version to <=16. If you are using `nvm`, you can do so by running `nvm install 16 && nvm use 16`.
+- If you are on MacOS with Apple Silicon chip and you've installed python3 via Homebrew, you might run into this error: `env: python: No such file or directory. make: *** [Release/leveldb.a] Error 127`. To fix this, you need to create a symlink to the python3 binary like so: `sudo ln -s /Library/Developer/CommandLineTools/usr/bin/python3 /usr/local/bin/python`.
 
 ## Contributions & Bug Reports
 

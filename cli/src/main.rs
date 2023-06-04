@@ -142,6 +142,12 @@ fn main() -> Result<()> {
 
     let addresses = if !addresses_json_file.exists() {
         println!("Deploying contracts...");
+        let install_deps = Command::new("yarn")
+            .args(["install"])
+            .current_dir(&contracts_bedrock_dir)
+            .output()?;
+        utils::check_command(install_deps, "Failed to install dependencies")?;
+
         let deploy_contracts = Command::new("yarn")
             .args(["hardhat", "--network", "devnetL1", "deploy", "--tags", "l1"])
             .env("CHAIN_ID", "900")
@@ -238,6 +244,23 @@ fn main() -> Result<()> {
     utils::check_command(start_batcher, "Failed to start batcher")?;
 
     // Step 10.
+    // Start challenger
+
+    // TODO: Deploy the mock dispute game contract
+    let dgf_address = "0x0000000000000000000000000000000000000000";
+
+    println!("Starting challenger...");
+    let start_challenger = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "challenger"])
+        .env("PWD", docker_dir.to_str().unwrap())
+        .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
+        .env("DGF_ADDRESS", dgf_address)
+        .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_challenger, "Failed to start challenger")?;
+
+    // Step 11.
     // Start stateviz
     let start_stateviz = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "stateviz"])

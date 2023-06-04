@@ -97,9 +97,11 @@ services:
 
   challenger:
     build:
-      context: .
-      dockerfile: "Dockerfile.challenger-${CHALLENGER_AGENT_CHOICE}"
-    # TODO: config
+      context: ../
+      dockerfile: "./docker/Dockerfile.challenger-${CHALLENGER_AGENT_CHOICE}"
+    ports:
+      - "9200:9200"
+      - "5545:8545"
 
   stateviz:
     build:

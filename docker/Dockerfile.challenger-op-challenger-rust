@@ -1,0 +1,5 @@
+FROM merklefruit/op-challenger:latest
+
+COPY op-challenger-rust-entrypoint.sh /op-challenger-rust-entrypoint.sh
+
+ENTRYPOINT ["/bin/sh", "/op-challenger-rust-entrypoint.sh"]

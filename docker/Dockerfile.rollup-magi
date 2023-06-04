@@ -1,0 +1,5 @@
+FROM a16zcrypto/magi:latest
+
+COPY magi-entrypoint.sh /magi-entrypoint.sh
+
+ENTRYPOINT ["/bin/sh", "/magi-entrypoint.sh"]
