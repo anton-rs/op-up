@@ -4,3 +4,4 @@ node_modules/
 .env
 .devnet
 .stack
+.DS_Store
