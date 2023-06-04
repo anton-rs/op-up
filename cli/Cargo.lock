@@ -520,6 +520,8 @@ dependencies = [
  "eyre",
  "inquire",
  "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,13 +1,13 @@
 use std::{
-    fs::File,
-    io::{BufRead, BufReader, BufWriter, Write},
-    path::{Path, PathBuf},
+    net::{SocketAddr, TcpStream},
+    path::Path,
     process::{Command, Output},
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use eyre::{bail, eyre, Result};
-
-use crate::OpStackConfig;
+use eyre::{bail, Result};
+use serde_json::{Map, Value};
 
 #[macro_export]
 macro_rules! make_selection {
@@ -34,14 +34,14 @@ pub fn git_clone(pwd: &Path, repo: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn make_executable(path: &Path) -> Result<()> {
-    let path_str = path.to_str().expect("Failed to convert path to string");
-    let out = Command::new("chmod").args(["+x", path_str]).output()?;
+// pub fn make_executable(path: &Path) -> Result<()> {
+//     let path_str = path.to_str().expect("Failed to convert path to string");
+//     let out = Command::new("chmod").args(["+x", path_str]).output()?;
 
-    check_command(out, &format!("Failed to make {} executable", path_str))?;
+//     check_command(out, &format!("Failed to make {} executable", path_str))?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 pub fn check_command(out: Output, err: &str) -> Result<()> {
     if !out.status.success() {
@@ -55,58 +55,47 @@ pub fn check_command(out: Output, err: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn read_stack_from_file(file: &PathBuf) -> Result<OpStackConfig> {
-    let file = File::open(file)?;
-    let reader = BufReader::new(file);
-    let lines: Vec<String> = reader.lines().map(|l| l.unwrap_or_default()).collect();
+pub fn wait_up(port: u16, retries: u32, wait_secs: u64) -> Result<()> {
+    for _ in 0..retries {
+        println!("Trying 127.0.0.1:{}", port);
+        if let Ok(stream) = TcpStream::connect(SocketAddr::from(([127, 0, 0, 1], port))) {
+            drop(stream);
+            println!("Connected 127.0.0.1:{}", port);
+            return Ok(());
+        }
+        thread::sleep(Duration::from_secs(wait_secs));
+    }
 
-    Ok(OpStackConfig {
-        l1_client: lines
-            .get(0)
-            .ok_or(eyre!("expected l1_client at line 1"))?
-            .to_string()
-            .parse()?,
-        l2_client: lines
-            .get(1)
-            .ok_or(eyre!("expected l2_client at line 2"))?
-            .to_string()
-            .parse()?,
-        rollup_client: lines
-            .get(2)
-            .ok_or(eyre!("expected rollup_client at line 3"))?
-            .to_string()
-            .parse()?,
-        challenger: lines
-            .get(3)
-            .ok_or(eyre!("expected challenger_agent at line 4"))?
-            .to_string()
-            .parse()?,
-    })
+    bail!("Timed out waiting for port {}.", port)
 }
 
-pub fn write_stack_to_file(file: &PathBuf, stack: &OpStackConfig) -> Result<()> {
-    let file = File::create(file)?;
-    let mut writer = BufWriter::new(file);
+pub fn read_json(file_path: &Path) -> Result<Value> {
+    let file = std::fs::File::open(file_path)?;
+    let reader = std::io::BufReader::new(file);
+    let json_value: Value = serde_json::from_reader(reader)?;
+    Ok(json_value)
+}
 
-    let mut line = String::new();
-    line.push_str(&stack.l1_client.to_string());
-    line.push('\n');
-    writer.write_all(line.as_bytes())?;
-
-    let mut line = String::new();
-    line.push_str(&stack.l2_client.to_string());
-    line.push('\n');
-    writer.write_all(line.as_bytes())?;
-
-    let mut line = String::new();
-    line.push_str(&stack.rollup_client.to_string());
-    line.push('\n');
-    writer.write_all(line.as_bytes())?;
-
-    let mut line = String::new();
-    line.push_str(&stack.challenger.to_string());
-    line.push('\n');
-    writer.write_all(line.as_bytes())?;
-
+pub fn write_json(file_path: &Path, json_value: &Value) -> Result<()> {
+    let file = std::fs::File::create(file_path)?;
+    let writer = std::io::BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, json_value)?;
     Ok(())
+}
+
+pub fn current_timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+pub fn set_json_property<P: Into<Value>>(json_value: &mut Value, key: &str, value: P) {
+    if let Some(obj) = json_value.as_object_mut() {
+        obj.insert(key.to_owned(), value.into());
+    } else {
+        let mut obj = Map::new();
+        obj.insert(key.to_owned(), value.into());
+        *json_value = Value::Object(obj);
+    }
 }

@@ -1,11 +1,13 @@
-use std::{env::current_dir, fmt::Display, fs::remove_file, path::Path, process::Command};
+use std::{fs, path::Path, process::Command};
 
 use eyre::{eyre, Result};
 use inquire::Confirm;
+use serde_json::Map;
 
-use crate::stack::{ChallengerAgent, L1Client, L2Client, RollupClient};
+use crate::stack::OpStackConfig;
 
 mod constants;
+mod genesis;
 mod stack;
 mod utils;
 
@@ -24,24 +26,37 @@ fn main() -> Result<()> {
       "#
     );
 
-    let cwd = current_dir()?;
+    let cwd = std::env::current_dir()?;
     let op_up_dir = cwd.parent().ok_or(eyre!("Failed to get project root"))?;
 
     // Directories referenced
     let docker_dir = op_up_dir.join("docker");
+    let devnet_dir = op_up_dir.join(".devnet");
+    let scripts_dir = op_up_dir.join("scripts");
     let op_monorepo_dir = op_up_dir.join("optimism");
+    let op_node_dir = op_monorepo_dir.join("op-node");
+    let ops_bedrock_dir = op_monorepo_dir.join("ops-bedrock");
+    let contracts_bedrock_dir = op_monorepo_dir.join("packages/contracts-bedrock");
+    let deploy_config_dir = contracts_bedrock_dir.join("deploy-config");
+    let deployment_dir = contracts_bedrock_dir.join("deployments/devnetL1");
     let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
     // Files referenced
     let stack_file = op_up_dir.join(".stack");
-    let devnet_up_script = docker_dir.join("devnet-up.sh");
+    let genesis_l1_file = devnet_dir.join("genesis_l1.json");
+    let genesis_l2_file = devnet_dir.join("genesis_l2.json");
+    let genesis_rollup_file = devnet_dir.join("rollup.json");
+    let addresses_json_file = devnet_dir.join("addresses.json");
+    let addresses_sdk_json_file = devnet_dir.join("addresses_sdk.json");
+    let deploy_config_file = deploy_config_dir.join("devnetL1.json");
+    let devnet_up_script = scripts_dir.join("main.py");
 
     // ----------------------------------------
     // Create a new op-stack config object from user choices
     // (or load an existing one from the .stack file if it exists)
 
     let stack = if stack_file.exists() {
-        let existing_stack = utils::read_stack_from_file(&stack_file)?;
+        let existing_stack = stack::read_from_file(&stack_file)?;
         println!("Looks like you've already got an existing op-stack loaded!");
 
         let use_existing = Confirm::new("Do you want to use the existing stack?")
@@ -53,7 +68,7 @@ fn main() -> Result<()> {
             println!("\nGreat! We'll use the existing stack.");
             existing_stack
         } else {
-            remove_file(&stack_file)?;
+            fs::remove_file(&stack_file)?;
             println!("\nOk, we'll start from scratch then.");
             OpStackConfig::from_user_choices()?
         }
@@ -64,7 +79,7 @@ fn main() -> Result<()> {
     };
 
     // Remember the selected stack for next time
-    utils::write_stack_to_file(&stack_file, &stack)?;
+    stack::write_to_file(&stack_file, &stack)?;
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
     // If not, clone them from Github
@@ -82,79 +97,91 @@ fn main() -> Result<()> {
 
     println!("Building devnet...");
 
-    // Run the main orchestration script
-    utils::make_executable(&devnet_up_script)?;
-    let devnet_up = Command::new(devnet_up_script)
+    // // Run the main orchestration script
+    // let devnet_up = Command::new(devnet_up_script)
+    //     .env("L1_CLIENT_CHOICE", stack.l1_client.to_string())
+    //     .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
+    //     .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
+    //     .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
+    //     .current_dir(&docker_dir)
+    //     .output()?;
+
+    // utils::check_command(devnet_up, "Failed to build devnet")?;
+
+    // Step 0.
+    // Setup
+
+    fs::create_dir_all(devnet_dir)?;
+    let curr_timestamp = utils::current_timestamp();
+    let genesis_template = genesis::genesis_template(curr_timestamp);
+
+    // Step 1.
+    // Create L1 genesis
+
+    if !genesis_l1_file.exists() {
+        println!("Creating L1 genesis...");
+        fs::write(genesis_l1_file, genesis_template)?;
+    } else {
+        println!("L1 genesis already found.");
+    }
+
+    // Step 2.
+    // Start L1 execution client
+
+    println!("Starting L1 execution client...");
+    let start_l1 = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "l1"])
         .env("L1_CLIENT_CHOICE", stack.l1_client.to_string())
-        .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
-        .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
-        .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
         .current_dir(&docker_dir)
         .output()?;
 
-    utils::check_command(devnet_up, "Failed to build devnet")?;
+    utils::check_command(start_l1, "Failed to start L1 execution client")?;
+    utils::wait_up(constants::L1_PORT, 10, 1)?;
+
+    // Step 3.
+    // Generate network configs
+
+    println!("Generating network configs...");
+    let mut deploy_config = utils::read_json(&deploy_config_file)?;
+    utils::set_json_property(
+        &mut deploy_config,
+        "l1GenesisBlockTimestamp",
+        curr_timestamp,
+    );
+    utils::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
+    utils::write_json(&deploy_config_file, &deploy_config)?;
+
+    // Step 4.
+    // Deploy contracts
+
+    if !addresses_json_file.exists() {
+        println!("Deploying contracts...");
+        let deploy_contracts = Command::new("yarn")
+            .args(["hardhat", "--network", "devnetL1", "deploy", "--tags", "l1"])
+            .env("CHAIN_ID", "900")
+            .env("L1_RPC", constants::L1_URL)
+            .env("PRIVATE_KEY_DEPLOYER", constants::DEPLOYER_PRIVATE_KEY)
+            .current_dir(&contracts_bedrock_dir)
+            .output()?;
+
+        utils::check_command(deploy_contracts, "Failed to deploy contracts")?;
+    }
+
+    let mut addresses = Map::new();
+    let entries = fs::read_dir(deployment_dir)?;
+    for entry in entries {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() && path.extension().unwrap_or_default() == "json" {
+            let file_name = path.file_stem().unwrap().to_string_lossy().to_string();
+            let data = utils::read_json(&path)?;
+
+            if let Some(address) = data["address"].as_str() {
+                addresses.insert(file_name, address.to_owned().into());
+            }
+        }
+    }
 
     Ok(())
-}
-
-/// ## OP Stack Config
-///
-/// Struct to hold the user's choices for the op-stack components
-/// that they want to use for their devnet
-pub struct OpStackConfig {
-    l1_client: L1Client,
-    l2_client: L2Client,
-    rollup_client: RollupClient,
-    challenger: ChallengerAgent,
-}
-
-impl Display for OpStackConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "L1 client: {}, L2 client: {}, Rollup client: {}, Challenger: {}",
-            self.l1_client, self.l2_client, self.rollup_client, self.challenger,
-        )
-    }
-}
-
-impl OpStackConfig {
-    /// ## Generate a new OP Stack config object from user choices
-    ///
-    /// Prompt the user to select their desired op-stack components
-    /// and return a new OpStackConfig struct with their selections
-    fn from_user_choices() -> Result<Self> {
-        make_selection!(
-            l1_client,
-            "Which L1 execution client would you like to use?",
-            vec![stack::GETH, stack::ERIGON]
-        );
-
-        make_selection!(
-            l2_client,
-            "Which L2 execution client would you like to use?",
-            vec![stack::OP_GETH, stack::OP_ERIGON]
-        );
-
-        make_selection!(
-            rollup_client,
-            "Which rollup client would you like to use?",
-            vec![stack::OP_NODE, stack::MAGI]
-        );
-
-        make_selection!(
-            challenger,
-            "Which challenger agent would you like to use?",
-            vec![stack::OP_CHALLENGER_GO, stack::OP_CHALLENGER_RUST]
-        );
-
-        println!("\nNice choice! You've got great taste ✨");
-
-        Ok(OpStackConfig {
-            l1_client: l1_client.parse()?,
-            l2_client: l2_client.parse()?,
-            rollup_client: rollup_client.parse()?,
-            challenger: challenger.parse()?,
-        })
-    }
 }

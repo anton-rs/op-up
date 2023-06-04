@@ -17,13 +17,28 @@ ROLLUP_CLIENT_URL="http://localhost:7545"
 
 mkdir -p "$DEVNET"
 
+# # Make sure the contracts have been built
+# if [ ! -f "$DEVNET/contracts" ]; then
+#   echo "Building contracts..."
+
+#   (
+#     cd "$CONTRACTS_BEDROCK"
+#     yarn
+#     yarn build
+#     touch "../../$DEVNET/contracts"
+#   )
+  
+#   echo "Done building contracts"
+# fi
+
 # Regenerate the L1 genesis file if necessary. The existence of the genesis
 # file is used to determine if we need to recreate the devnet's state folder.
 if [ ! -f "$DEVNET/done" ]; then
   echo "Regenerating genesis files"
 
   TIMESTAMP=$(date +%s | xargs printf '0x%x')
-  cat "$CONTRACTS_BEDROCK/deploy-config/devnetL1.json" | jq -r ".l1GenesisBlockTimestamp = \"$TIMESTAMP\"" > /tmp/bedrock-devnet-deploy-config.json
+  cat "$CONTRACTS_BEDROCK/deploy-config/devnetL1.json" | jq -r ".l1GenesisBlockTimestamp = \"$TIMESTAMP\"" > /tmp/bedrock-devnet-deploy-config-int.json
+  cat /tmp/bedrock-devnet-deploy-config-int.json | jq -r ".l1StartingBlockTag = \"earliest\"" > /tmp/bedrock-devnet-deploy-config.json
 
   (
     cd "$OP_NODE"
