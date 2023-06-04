@@ -3,8 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use eyre::{bail, Report};
 
 // L2 clients
-pub const OP_GETH: &str = "op-geth (go)";
-pub const OP_ERIGON: &str = "op-erigon (go)";
+pub const OP_GETH: &str = "op-geth";
+pub const OP_ERIGON: &str = "op-erigon";
 
 pub enum L2Client {
     OpGeth,

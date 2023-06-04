@@ -3,10 +3,7 @@ use std::{env::current_dir, fmt::Display, fs::remove_file, path::Path, process::
 use eyre::{eyre, Result};
 use inquire::Confirm;
 
-use crate::{
-    stack::{ChallengerAgent, L1Client, L2Client, RollupClient},
-    utils::GitCloneMethod,
-};
+use crate::stack::{ChallengerAgent, L1Client, L2Client, RollupClient};
 
 mod constants;
 mod stack;
@@ -31,20 +28,19 @@ fn main() -> Result<()> {
     let op_up_dir = cwd.parent().ok_or(eyre!("Failed to get project root"))?;
 
     // Directories referenced
-    let ops_dir = op_up_dir.join("ops");
-    let docker_dir = ops_dir.join("docker");
+    let docker_dir = op_up_dir.join("docker");
     let op_monorepo_dir = op_up_dir.join("optimism");
     let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
     // Files referenced
     let stack_file = op_up_dir.join(".stack");
-    let set_timestamp_script = ops_dir.join("devnet_state").join("set_timestamp.sh");
+    let devnet_up_script = docker_dir.join("devnet-up.sh");
 
     // ----------------------------------------
     // Create a new op-stack config object from user choices
     // (or load an existing one from the .stack file if it exists)
 
-    let op_stack_config = if stack_file.exists() {
+    let stack = if stack_file.exists() {
         let existing_stack = utils::read_stack_from_file(&stack_file)?;
         println!("Looks like you've already got an existing op-stack loaded!");
 
@@ -68,146 +64,37 @@ fn main() -> Result<()> {
     };
 
     // Remember the selected stack for next time
-    utils::write_stack_to_file(&stack_file, &op_stack_config)?;
+    utils::write_stack_to_file(&stack_file, &stack)?;
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
-    // If not, shallow-clone them from github with the `--no-checkout` flag
+    // If not, clone them from Github
     if !Path::new(&op_monorepo_dir).exists() {
-        println!("Cloning the optimism monorepo from github...");
-        utils::git_clone(
-            op_up_dir,
-            GitCloneMethod::Shallow,
-            constants::OP_MONOREPO_URL,
-        )?;
+        println!("Cloning the optimism monorepo from github (this may take a while)...");
+        utils::git_clone(op_up_dir, constants::OP_MONOREPO_URL)?;
     }
     if !Path::new(&op_rs_monorepo_dir).exists() {
-        println!("Cloning the optimism-rs monorepo from github...");
-        utils::git_clone(
-            op_up_dir,
-            GitCloneMethod::Shallow,
-            constants::OP_RS_MONOREPO_URL,
-        )?;
+        println!("Cloning the optimism-rs monorepo from github (this may take a while)...");
+        utils::git_clone(op_up_dir, constants::OP_RS_MONOREPO_URL)?;
     }
-
-    // ----------------------------------------
-    // Based on the components selected, pull the appropriate packages
-    // from the op-monorepo and op-rs-monorepo using the `sparse-checkout` git feature
-
-    println!("Pulling the selected components from github...");
-
-    utils::git_sparse_checkout(&op_monorepo_dir, "init", "--cone")?;
-    utils::git_sparse_checkout(&op_rs_monorepo_dir, "init", "--cone")?;
-
-    // These components are always pulled as they are required.
-    // If in the future there will be more versions of these components,
-    // they should become configurable as well, with the rest of the stack
-    utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-proposer")?;
-    utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-batcher")?;
-    utils::git_sparse_checkout(&op_monorepo_dir, "add", "ops-bedrock")?;
-    // utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-node")?;
-    // utils::git_sparse_checkout(&op_monorepo_dir, "add", "packages/contracts-bedrock")?;
-
-    match op_stack_config.l1_client {
-        L1Client::Geth => { /* No extra dependencies needed */ }
-        L1Client::Erigon => { /* No extra dependencies needed */ }
-    }
-
-    match op_stack_config.l2_client {
-        L2Client::OpGeth => { /* No extra dependencies needed */ }
-        L2Client::OpErigon => { /* No extra dependencies needed */ }
-    }
-
-    match op_stack_config.rollup_client {
-        RollupClient::OpNode => utils::git_sparse_checkout(&op_rs_monorepo_dir, "add", "op-node")?,
-        RollupClient::Magi => {
-            utils::git_clone(op_up_dir, GitCloneMethod::Full, constants::MAGI_REPO_URL)?
-        }
-    }
-
-    match op_stack_config.challenger_agent {
-        ChallengerAgent::OpChallengerGo => {
-            utils::git_sparse_checkout(&op_monorepo_dir, "add", "op-challenger")?;
-        }
-        ChallengerAgent::OpChallengerRust => {
-            utils::git_clone(
-                op_up_dir,
-                GitCloneMethod::Full,
-                constants::OP_CHALLENGER_RUST_REPO_URL,
-            )?;
-        }
-    }
-
-    // Finally pull the components added via sparse-checkout
-    let op_checkout_components = Command::new("git")
-        .arg("checkout")
-        .current_dir(&op_monorepo_dir)
-        .output()?;
-    utils::check_command(
-        op_checkout_components,
-        &format!("Failed git checkout in {:?}", op_monorepo_dir),
-    )?;
-    let op_rs_checkout_components = Command::new("git")
-        .arg("checkout")
-        .current_dir(&op_rs_monorepo_dir)
-        .output()?;
-    utils::check_command(
-        op_rs_checkout_components,
-        &format!("Failed git checkout in {:?}", op_rs_monorepo_dir),
-    )?;
 
     // ----------------------------------------
     // Build the devnet
 
-    println!("Components successfully pulled! Building devnet...");
+    println!("Building devnet...");
 
-    // Update devnet genesis files with the current timestamps
-    utils::make_executable(&set_timestamp_script)?;
-    let update_timestamps = Command::new(set_timestamp_script)
-        .env("OP_UP_DIR", op_up_dir.to_str().unwrap())
+    // Run the main orchestration script
+    utils::make_executable(&devnet_up_script)?;
+    let devnet_up = Command::new(devnet_up_script)
+        .env("L1_CLIENT_CHOICE", stack.l1_client.to_string())
+        .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
+        .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
+        .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
+        .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(update_timestamps, "Failed to update devnet genesis files")?;
 
-    println!("You may need to enter your password to run docker-compose as sudo.");
+    dbg!(devnet_up.clone()); // TODO: remove
 
-    // // Build the docker images
-    // let docker_build = Command::new("docker-compose")
-    //     .arg("build")
-    //     .arg("")
-    //     .arg("--progress")
-    //     .arg("plain")
-    //     .env("DOCKER_BUILDKIT", "1")
-    //     .env("L2OO_ADDRESS", constants::L2OO_ADDRESS)
-    //     .env("PWD", docker_dir.to_str().unwrap())
-    //     .current_dir(&docker_dir)
-    //     .output()?;
-    // utils::check_command(docker_build, "Failed to build docker images")?;
-
-    // Bring up the L1
-    match op_stack_config.l1_client {
-        L1Client::Geth => {
-            println!("Bringing up geth...");
-            let geth_up = Command::new("docker-compose")
-                .arg("up")
-                .arg("--detach")
-                .arg("--no-deps")
-                .arg("--build")
-                .arg("l1_geth")
-                .env("L2OO_ADDRESS", constants::L2OO_ADDRESS)
-                .current_dir(&docker_dir)
-                .output()?;
-
-            dbg!(geth_up.clone());
-            utils::check_command(geth_up, "Failed to bring up geth")?;
-        }
-        L1Client::Erigon => {
-            println!("Bringing up erigon...");
-            todo!();
-        }
-    };
-
-    // Wait for the L1 to be ready
-    println!("Waiting for the L1 to be ready...");
-    utils::wait_for_response(constants::L1_URL)?;
+    utils::check_command(devnet_up, "Failed to build devnet")?;
 
     Ok(())
 }
@@ -220,7 +107,7 @@ pub struct OpStackConfig {
     l1_client: L1Client,
     l2_client: L2Client,
     rollup_client: RollupClient,
-    challenger_agent: ChallengerAgent,
+    challenger: ChallengerAgent,
 }
 
 impl Display for OpStackConfig {
@@ -228,7 +115,7 @@ impl Display for OpStackConfig {
         write!(
             f,
             "L1 client: {}, L2 client: {}, Rollup client: {}, Challenger: {}",
-            self.l1_client, self.l2_client, self.rollup_client, self.challenger_agent,
+            self.l1_client, self.l2_client, self.rollup_client, self.challenger,
         )
     }
 }
@@ -258,7 +145,7 @@ impl OpStackConfig {
         );
 
         make_selection!(
-            challenger_agent,
+            challenger,
             "Which challenger agent would you like to use?",
             vec![stack::OP_CHALLENGER_GO, stack::OP_CHALLENGER_RUST]
         );
@@ -269,7 +156,7 @@ impl OpStackConfig {
             l1_client: l1_client.parse()?,
             l2_client: l2_client.parse()?,
             rollup_client: rollup_client.parse()?,
-            challenger_agent: challenger_agent.parse()?,
+            challenger: challenger.parse()?,
         })
     }
 }

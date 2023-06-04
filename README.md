@@ -10,8 +10,6 @@ This project was born out of the need to test out [Magi](https://github.com/a16z
 
 For instance, you can use OP-Up to spin up a devnet with a [Geth](https://github.com/ethereum/go-ethereum) L1 node, an [OP-Erigon](https://github.com/testinprod-io/op-erigon) L2 node, and a [Magi](https://github.com/a16z/magi) rollup node, and test out the interoperability between them in an end-to-end fashion.
 
-OP-Up makes use of the Git `sparse-checkout` functionality to clone only the necessary submodules of each component from the [Optimism](https://github.com/ethereum-optimism/optimism) and [Optimism-rs](https://github.com/refcell/optimism-rs) monorepos, and also features a custom Docker configuration.
-
 ## Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install)
@@ -51,10 +49,21 @@ In some cases, you might need to run the command with `sudo` to access `docker-c
 sudo make devnet
 ```
 
-## Bugs & Contributions
+Once the devnet is up and running, L1 is accessible at `http://localhost:8545`, and L2 is accessible at `http://localhost:9545`.
+Any Ethereum tool - Metamask, `seth`, etc. - can use these endpoints.
+Note that you will need to specify the L2 chain ID manually if you use Metamask. The devnet's L2 chain ID is 901.
 
-Please report any bugs or issues you encounter by opening an issue on GitHub. <br />
-Contributions are welcome!
+The devnet comes with a pre-funded account you can use as a faucet:
+
+- Address: `0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266`
+- Private key: `ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
+
+The faucet account exists on both L1 and L2.
+
+## Contributions & Bug Reports
+
+Please report any bugs or issues you encounter by opening an issue here on GitHub. <br />
+Contributions are always welcome!
 
 ## License
 

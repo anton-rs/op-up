@@ -3,8 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use eyre::{bail, Report};
 
 // L1 clients
-pub const GETH: &str = "geth (go)";
-pub const ERIGON: &str = "erigon (go)";
+pub const GETH: &str = "geth";
+pub const ERIGON: &str = "erigon";
 
 pub enum L1Client {
     Geth,

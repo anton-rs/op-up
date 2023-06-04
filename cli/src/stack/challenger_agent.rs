@@ -3,8 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use eyre::{bail, Report};
 
 // Challenger agents
-pub const OP_CHALLENGER_GO: &str = "op-challenger-go (go)";
-pub const OP_CHALLENGER_RUST: &str = "op-challenger-rust (rust)";
+pub const OP_CHALLENGER_GO: &str = "op-challenger-go";
+pub const OP_CHALLENGER_RUST: &str = "op-challenger-rust";
 
 pub enum ChallengerAgent {
     OpChallengerGo,

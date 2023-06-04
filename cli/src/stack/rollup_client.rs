@@ -3,8 +3,8 @@ use std::{fmt::Display, str::FromStr};
 use eyre::{bail, Report};
 
 // Rollup clients
-pub const OP_NODE: &str = "op-node (rust)";
-pub const MAGI: &str = "magi (rust)";
+pub const OP_NODE: &str = "op-node";
+pub const MAGI: &str = "magi";
 
 pub enum RollupClient {
     OpNode,
