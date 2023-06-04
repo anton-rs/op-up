@@ -2,12 +2,12 @@ use std::{fs, path::Path, process::Command};
 
 use eyre::{eyre, Result};
 use inquire::Confirm;
-use serde_json::Map;
 
 use crate::stack::OpStackConfig;
 
 mod constants;
 mod genesis;
+mod set_addresses;
 mod stack;
 mod utils;
 
@@ -154,7 +154,7 @@ fn main() -> Result<()> {
     // Step 4.
     // Deploy contracts
 
-    if !addresses_json_file.exists() {
+    let addresses = if !addresses_json_file.exists() {
         println!("Deploying contracts...");
         let deploy_contracts = Command::new("yarn")
             .args(["hardhat", "--network", "devnetL1", "deploy", "--tags", "l1"])
@@ -165,23 +165,94 @@ fn main() -> Result<()> {
             .output()?;
 
         utils::check_command(deploy_contracts, "Failed to deploy contracts")?;
+
+        // Write the addresses to json
+        let (addresses, sdk_addresses) = set_addresses::set_addresses(&deployment_dir)?;
+        utils::write_json(&addresses_json_file, &addresses)?;
+        utils::write_json(&addresses_sdk_json_file, &sdk_addresses)?;
+
+        addresses
+    } else {
+        println!("Contracts already deployed.");
+        utils::read_json(&addresses_json_file)?
+    };
+
+    // Step 5.
+    // Create L2 genesis
+
+    if !genesis_l2_file.exists() {
+        println!("Creating L2 and rollup genesis...");
+        let l2_genesis = Command::new("go")
+            .args(["run", "cmd/main.go", "genesis", "l2"])
+            .args(["--l1-rpc", constants::L1_URL])
+            .args(["--deploy-config", deploy_config_file.to_str().unwrap()])
+            .args(["--deployment-dir", deployment_dir.to_str().unwrap()])
+            .args(["--outfile.l2", genesis_l2_file.to_str().unwrap()])
+            .args(["--outfile.rollup", genesis_rollup_file.to_str().unwrap()])
+            .current_dir(&op_node_dir)
+            .output()?;
+        utils::check_command(l2_genesis, "Failed to create L2 genesis")?;
+    } else {
+        println!("L2 genesis already found.");
     }
 
-    let mut addresses = Map::new();
-    let entries = fs::read_dir(deployment_dir)?;
-    for entry in entries {
-        let entry = entry?;
-        let path = entry.path();
+    // Step 6.
+    // Start L2 execution client
 
-        if path.is_file() && path.extension().unwrap_or_default() == "json" {
-            let file_name = path.file_stem().unwrap().to_string_lossy().to_string();
-            let data = utils::read_json(&path)?;
+    println!("Starting L2 execution client...");
+    let start_l2 = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "l2"])
+        .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_l2, "Failed to start L2 execution client")?;
+    utils::wait_up(constants::L2_PORT, 10, 1)?;
 
-            if let Some(address) = data["address"].as_str() {
-                addresses.insert(file_name, address.to_owned().into());
-            }
-        }
-    }
+    // Step 7.
+    // Start rollup client
+
+    println!("Starting rollup client...");
+    let start_rollup = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
+        .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_rollup, "Failed to start rollup client")?;
+    utils::wait_up(constants::ROLLUP_PORT, 30, 1)?;
+
+    // Step 8.
+    // Start proposer
+
+    println!("Starting proposer...");
+    let start_proposer = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "proposer"])
+        .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_proposer, "Failed to start proposer")?;
+
+    // Step 9.
+    // Start batcher
+
+    println!("Starting batcher...");
+    let rollup_config = utils::read_json(&genesis_rollup_file)?;
+    let start_batcher = Command::new("docker-compose")
+        .args(["up", "-d", "--no-deps", "--build", "batcher"])
+        .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
+        .env(
+            "SEQUENCER_BATCH_INBOX_ADDRESS",
+            rollup_config["batch_inbox_address"].to_string(),
+        )
+        .current_dir(&docker_dir)
+        .output()?;
+    utils::check_command(start_batcher, "Failed to start batcher")?;
+
+    println!("\n--------------------------");
+    println!("Devnet built successfully!");
+    println!("L1 endpoint: {}", constants::L1_URL);
+    println!("L2 endpoint: {}", constants::L2_URL);
+    println!("Rollup node endpoint: {}", constants::ROLLUP_URL);
+    println!("--------------------------\n");
 
     Ok(())
 }

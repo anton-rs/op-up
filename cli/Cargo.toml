@@ -9,6 +9,5 @@ authors = ["merklefruit"]
 [dependencies]
 eyre = "0.6.8"
 inquire = "0.6.2"
-reqwest = { version = "0.11.8", features = ["blocking"] }
 serde = "1.0.163"
 serde_json = "1.0.96"
