@@ -32,10 +32,8 @@ fn main() -> Result<()> {
     // Directories referenced
     let docker_dir = op_up_dir.join("docker");
     let devnet_dir = op_up_dir.join(".devnet");
-    let scripts_dir = op_up_dir.join("scripts");
     let op_monorepo_dir = op_up_dir.join("optimism");
     let op_node_dir = op_monorepo_dir.join("op-node");
-    let ops_bedrock_dir = op_monorepo_dir.join("ops-bedrock");
     let contracts_bedrock_dir = op_monorepo_dir.join("packages/contracts-bedrock");
     let deploy_config_dir = contracts_bedrock_dir.join("deploy-config");
     let deployment_dir = contracts_bedrock_dir.join("deployments/devnetL1");
@@ -49,7 +47,6 @@ fn main() -> Result<()> {
     let addresses_json_file = devnet_dir.join("addresses.json");
     let addresses_sdk_json_file = devnet_dir.join("addresses_sdk.json");
     let deploy_config_file = deploy_config_dir.join("devnetL1.json");
-    let devnet_up_script = scripts_dir.join("main.py");
 
     // ----------------------------------------
     // Create a new op-stack config object from user choices
@@ -96,17 +93,6 @@ fn main() -> Result<()> {
     // Build the devnet
 
     println!("Building devnet...");
-
-    // // Run the main orchestration script
-    // let devnet_up = Command::new(devnet_up_script)
-    //     .env("L1_CLIENT_CHOICE", stack.l1_client.to_string())
-    //     .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
-    //     .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
-    //     .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
-    //     .current_dir(&docker_dir)
-    //     .output()?;
-
-    // utils::check_command(devnet_up, "Failed to build devnet")?;
 
     // Step 0.
     // Setup
