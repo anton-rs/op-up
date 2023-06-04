@@ -92,8 +92,6 @@ fn main() -> Result<()> {
         .current_dir(&docker_dir)
         .output()?;
 
-    dbg!(devnet_up.clone()); // TODO: remove
-
     utils::check_command(devnet_up, "Failed to build devnet")?;
 
     Ok(())

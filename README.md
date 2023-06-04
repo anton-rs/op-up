@@ -43,7 +43,7 @@ Clone this repository and run the following command from the root directory:
 make devnet
 ```
 
-In some cases, you might need to run the command with `sudo` to access `docker-compose` commands:
+In some cases, you might need to give admin permissions. In that case, run:
 
 ```sh
 sudo make devnet

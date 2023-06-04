@@ -1,3 +1,7 @@
+#!/bin/sh
+
+set -exu
+
 exec op-node \
       --l1=ws://l1:8546 \
       --l2=http://l2:8551 \

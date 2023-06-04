@@ -50,13 +50,14 @@ if [ ! -f "$DEVNET/done" ]; then
     cd "$OP_NODE"
     go run cmd/main.go genesis devnet \
         --deploy-config /tmp/bedrock-devnet-deploy-config.json \
-        --outfile.l1 $DEVNET/genesis-l1.json \
-        --outfile.l2 $DEVNET/genesis-l2.json \
-        --outfile.rollup $DEVNET/rollup.json
-    touch "$DEVNET/done"
+        --outfile.l1 "../$DEVNET/genesis-l1.json" \
+        --outfile.l2 "../$DEVNET/genesis-l2.json" \
+        --outfile.rollup "../$DEVNET/rollup.json"
+    touch "../$DEVNET/done"
   )
-fi
 
+  echo "Done regenerating genesis files"
+fi
 
 # Helper method that waits for a given URL to be up. Can't use
 # cURL's built-in retry logic because connection reset errors
@@ -78,11 +79,10 @@ function wait_up {
   echo "Done!"
 }
 
-
 # Bring up L1.
 (
   echo "Bringing up L1..."
-  L1_CLIENT_CHOICE="$L1_CLIENT_CHOICE" \
+  L1_CLIENT_CHOICE="$L1_CLIENT_CHOICE" L2OO_ADDRESS="$L2OO_ADDRESS" \
     docker-compose up -d --no-deps --build l1
   wait_up $L1_URL
 )
@@ -90,7 +90,7 @@ function wait_up {
 # Bring up L2.
 (
   echo "Bringing up L2..."
-  L2_CLIENT_CHOICE="$L2_CLIENT_CHOICE" \
+  L2_CLIENT_CHOICE="$L2_CLIENT_CHOICE" L2OO_ADDRESS="$L2OO_ADDRESS" \
     docker-compose up -d --no-deps --build l2
   wait_up $L2_URL
 )
@@ -98,26 +98,29 @@ function wait_up {
 # Bring up the rollup client
 (
   echo "Bringing up rollup client..."
-  ROLLUP_CLIENT_CHOICE="$ROLLUP_CLIENT_CHOICE" \
+  ROLLUP_CLIENT_CHOICE="$ROLLUP_CLIENT_CHOICE" L2OO_ADDRESS="$L2OO_ADDRESS" \
     docker-compose up -d --no-deps --build rollup-client
 )
 
 # Bring up the L2 proposer
 (
   echo "Bringing up L2 proposer..."
-  docker-compose up -d --no-deps --build proposer
+  L2OO_ADDRESS="$L2OO_ADDRESS" \
+    docker-compose up -d --no-deps --build proposer
 )
 
 # Bring up the L2 batcher
 (
   echo "Bringing up L2 batcher..."
-  docker-compose up -d --no-deps --build batcher
+  L2OO_ADDRESS="$L2OO_ADDRESS" \
+    docker-compose up -d --no-deps --build batcher
 )
 
 # Bring up stateviz
 (
   echo "Bringing up stateviz webserver..."
-  docker-compose up -d --no-deps --build stateviz
+  L2OO_ADDRESS="$L2OO_ADDRESS" \
+    docker-compose up -d --no-deps --build stateviz
 )
 
 echo "Devnet ready to go!"
