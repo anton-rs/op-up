@@ -1,6 +1,9 @@
 target/
 node_modules/
 
+optimism/
+optimism-rs/
+
 .env
 .devnet
 .stack
