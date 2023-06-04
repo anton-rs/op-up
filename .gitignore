@@ -1,6 +1,5 @@
 target/
-optimism/
-optimism-rs/
+node_modules/
 
 .env
 .devnet
