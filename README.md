@@ -60,6 +60,20 @@ The devnet comes with a pre-funded account you can use as a faucet:
 
 The faucet account exists on both L1 and L2.
 
+---
+
+To stop the devnet, run:
+
+```sh
+make devnet-stop
+```
+
+To reset the OP-Up repository to its initial state, run:
+
+```sh
+make nuke
+```
+
 ## Contributions & Bug Reports
 
 Please report any bugs or issues you encounter by opening an issue here on GitHub. <br />

@@ -24,6 +24,7 @@ RUN make op-node VERSION="$VERSION" GOOS=$TARGETOS GOARCH=$TARGETARCH
 FROM alpine:3.16
 
 COPY --from=builder /app/op-node/bin/op-node /usr/local/bin
+
 COPY ./docker/op-node-entrypoint.sh /op-node-entrypoint.sh
 
 CMD ["/bin/sh", "/op-node-entrypoint.sh"]

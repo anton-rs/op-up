@@ -1,33 +1,11 @@
 #!/usr/bin/env bash
 
-# This script starts a local devnet using Docker Compose. We have to use
-# this more complicated Bash script rather than Compose's native orchestration
-# tooling because we need to start each service in a specific order, and specify
-# their configuration along the way. The order is:
-#
-# 1. Start L1.
-# 2. Compile contracts.
-# 3. Deploy the contracts to L1 if necessary.
-# 4. Start L2, inserting the compiled contract artifacts into the genesis.
-# 5. Get the genesis hashes and timestamps from L1/L2.
-# 6. Generate the rollup driver's config using the genesis hashes and the
-#    timestamps recovered in step 4 as well as the address of the OptimismPortal
-#    contract deployed in step 3.
-# 7. Start the rollup driver.
-# 8. Start the L2 output submitter.
-#
-# The timestamps are critically important here, since the rollup driver will fill in
-# empty blocks if the tip of L1 lags behind the current timestamp. This can lead to
-# a perceived infinite loop. To get around this, we set the timestamp to the current
-# time in this script.
-#
-# This script is safe to run multiple times. It stores state in `.devnet`, and
-# contracts-bedrock/deployments/devnetL1.
-# 
-# Don't run this script directly, use the OP-Up CLI instead.
+# This script is a modified version of the one found in the Optimism monorepo:
+# https://github.com/ethereum-optimism/optimism/tree/develop/ops-bedrock/devnet-up.sh
 
 set -eu
 
+NETWORK=devnetL1
 DEVNET="../.devnet"
 CONTRACTS_BEDROCK="../optimism/packages/contracts-bedrock"
 OP_NODE="../optimism/op-node"
@@ -35,6 +13,7 @@ OP_NODE="../optimism/op-node"
 L2OO_ADDRESS="0x6900000000000000000000000000000000000000"
 L1_URL="http://localhost:8545"
 L2_URL="http://localhost:9545"
+ROLLUP_CLIENT_URL="http://localhost:7545"
 
 mkdir -p "$DEVNET"
 
@@ -100,6 +79,7 @@ function wait_up {
   echo "Bringing up rollup client..."
   ROLLUP_CLIENT_CHOICE="$ROLLUP_CLIENT_CHOICE" L2OO_ADDRESS="$L2OO_ADDRESS" \
     docker-compose up -d --no-deps --build rollup-client
+  wait_up $ROLLUP_CLIENT_URL
 )
 
 # Bring up the L2 proposer
@@ -116,11 +96,17 @@ function wait_up {
     docker-compose up -d --no-deps --build batcher
 )
 
+# Bring up the challenger agent
+# TODO
+# (
+#   echo "Bringing up challenger agent..."
+#   docker-compose up -d --no-deps --build challenger-agent
+# )
+
 # Bring up stateviz
 (
   echo "Bringing up stateviz webserver..."
-  L2OO_ADDRESS="$L2OO_ADDRESS" \
-    docker-compose up -d --no-deps --build stateviz
+  docker-compose up -d --no-deps --build stateviz
 )
 
 echo "Devnet ready to go!"
