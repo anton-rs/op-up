@@ -41,11 +41,11 @@ fn main() -> Result<()> {
 
     // Files referenced
     let stack_file = op_up_dir.join(".stack");
-    let genesis_l1_file = devnet_dir.join("genesis_l1.json");
-    let genesis_l2_file = devnet_dir.join("genesis_l2.json");
+    let genesis_l1_file = devnet_dir.join("genesis-l1.json");
+    let genesis_l2_file = devnet_dir.join("genesis-l2.json");
     let genesis_rollup_file = devnet_dir.join("rollup.json");
     let addresses_json_file = devnet_dir.join("addresses.json");
-    let addresses_sdk_json_file = devnet_dir.join("addresses_sdk.json");
+    let addresses_sdk_json_file = devnet_dir.join("addresses-sdk.json");
     let deploy_config_file = deploy_config_dir.join("devnetL1.json");
 
     // ----------------------------------------
@@ -92,11 +92,10 @@ fn main() -> Result<()> {
     // ----------------------------------------
     // Build the devnet
 
-    println!("Building devnet...");
-
     // Step 0.
     // Setup
 
+    println!("\nBuilding devnet...");
     fs::create_dir_all(devnet_dir)?;
     let curr_timestamp = utils::current_timestamp();
     let genesis_template = genesis::genesis_template(curr_timestamp);
@@ -117,6 +116,7 @@ fn main() -> Result<()> {
     println!("Starting L1 execution client...");
     let start_l1 = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "l1"])
+        .env("PWD", docker_dir.to_str().unwrap())
         .env("L1_CLIENT_CHOICE", stack.l1_client.to_string())
         .current_dir(&docker_dir)
         .output()?;
@@ -188,6 +188,7 @@ fn main() -> Result<()> {
     println!("Starting L2 execution client...");
     let start_l2 = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "l2"])
+        .env("PWD", docker_dir.to_str().unwrap())
         .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
         .current_dir(&docker_dir)
         .output()?;
@@ -200,6 +201,7 @@ fn main() -> Result<()> {
     println!("Starting rollup client...");
     let start_rollup = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
+        .env("PWD", docker_dir.to_str().unwrap())
         .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
         .current_dir(&docker_dir)
         .output()?;
@@ -212,6 +214,7 @@ fn main() -> Result<()> {
     println!("Starting proposer...");
     let start_proposer = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "proposer"])
+        .env("PWD", docker_dir.to_str().unwrap())
         .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
         .current_dir(&docker_dir)
         .output()?;
@@ -224,6 +227,7 @@ fn main() -> Result<()> {
     let rollup_config = utils::read_json(&genesis_rollup_file)?;
     let start_batcher = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "batcher"])
+        .env("PWD", docker_dir.to_str().unwrap())
         .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
         .env(
             "SEQUENCER_BATCH_INBOX_ADDRESS",

@@ -12,11 +12,7 @@ For instance, you can use OP-Up to spin up a devnet with a [Geth](https://github
 
 ## Prerequisites
 
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [Make](https://www.gnu.org/software/make/)
-- [jq](https://jqlang.github.io/jq/)
+You need to have [Rust](https://www.rust-lang.org/tools/install), [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/), [Make](https://www.gnu.org/software/make/) and [jq](https://jqlang.github.io/jq/) installed on your machine to use OP-Up.
 
 ## Supported Components
 
