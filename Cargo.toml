@@ -1,0 +1,14 @@
+[workspace]
+members = ["bin", "crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+authors = ["merklefruit", "refcell"]
+
+[profile.dev]
+opt-level = 1
+overflow-checks = false
+
+[profile.bench]
+debug = true
