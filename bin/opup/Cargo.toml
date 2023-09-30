@@ -1,11 +1,36 @@
 [package]
 name = "opup"
-version = "0.1.0"
-edition = "2021"
-authors = ["merklefruit", "refcell"]
+description = "Spin up a composable OP Stack, programmatically."
+
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
 
 [dependencies]
-eyre = "0.6.8"
-inquire = "0.6.2"
-serde = "1.0.163"
-serde_json = "1.0.96"
+arbiter-core = { version = "0.5.0" }
+tokio = { version = "1.11.0", features = ["full"] }
+ethers = { version = "2.0.10" }
+revm = { version = "3.3.0" }
+async-trait = "0.1.73"
+anyhow = "1.0.75"
+ethabi = "18.0.0"
+num-bigint = "0.4"
+thiserror = "1.0"
+
+clap = { version = "4.4.3", features = ["derive"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+
+bindings = { path = "../../crates/bindings" }
+alloy-primitives = "0.4.0"
+alloy-sol-types = "0.4.0"
+
+[target.'cfg(not(windows))'.dependencies]
+jemallocator = { version = "0.5.0", optional = true }
+jemalloc-ctl = { version = "0.5.0", optional = true }
+
+[features]
+default = ["jemalloc"]
+jemalloc = ["dep:jemallocator", "dep:jemalloc-ctl"]
+jemalloc-prof = ["jemalloc", "jemallocator?/profiling"]
