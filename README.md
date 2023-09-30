@@ -13,6 +13,13 @@
 
 ![](./etc/op-up-banner.png)
 
+**[Install](./docs/install/installation.md)**
+| [User Book](https://opup.anton.systems)
+| [Developer Docs](./docs/developers/developers.md)
+| [Crate Docs](https://crates.io/crates/opup)
+
+*The project is still work in progress, see the [disclaimer below](#status).*
+
 ## What is op-up?
 
 `op-up` is the infrastructure for building composable OP Stack configurations.
@@ -28,7 +35,7 @@ Have a new rollup derivation pipeline implementation for the OP Stack and want t
 > Use `op-up` to configure an OP Stack with the new rollup derivation pipeline.
 > Then, you can spin up a local devnet and run test suites against it!
 
-## What is the OP Stack?
+## What's the OP Stack?
 
 The [OP Stack](https://stack.optimism.io/) is what powers the superchain!
 
@@ -46,12 +53,19 @@ You can use
 - [op-reth](https://github.com/anton-rs/op-reth/) as an L2 node (interchangeable with [op-geth](https://github.com/ethereum-optimism/op-geth)).
 - [magi](https://github.com/a16z/magi) as the rollup node.
 
-_Note, this "op-stack" does not include the "sequencer" including the
-the proposer or batcher, as well as fault proof components._
-
-// -------------- TODO: clean up below. -------------------- //
+*Notice, this does not include the proposer or batcher,
+as well as fault proof components.*
 
 ## Usage
+
+First, make sure you have a few things installed.
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
+- [Make](https://www.gnu.org/software/make/)
+- [jq](https://jqlang.github.io/jq/)
+
 
 To get started with the interactive prompt, run the following commands:
 
@@ -59,6 +73,8 @@ To get started with the interactive prompt, run the following commands:
 git clone git@github.com:merklefruit/op-up.git && cd op-up
 make devnet
 ```
+
+This will bring up a devnet using a local devnet with default components.
 
 Once the devnet is up and running, L1 is accessible at `http://localhost:8545`, and L2 is accessible at `http://localhost:9545`.
 Any Ethereum tool - Metamask, `seth`, etc. - can use these endpoints.
@@ -85,43 +101,39 @@ To reset the devnet state, run:
 make nuke
 ```
 
+## Using `op-up` as a library
 
-## Prerequisites
+By building with Rust's [crate system](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html),
+`op-up` can easily be used as a library in an extensible way.
 
-You need to have [Rust](https://www.rust-lang.org/tools/install), [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/), [Make](https://www.gnu.org/software/make/) and [jq](https://jqlang.github.io/jq/) installed on your machine to use OP-Up.
+## Status
 
-## Supported Components
+https://github.com/merklefruit/op-up/labels/beta
 
-- L1 Execution clients:
-  - [x] [Geth (go)](https://github.com/ethereum/go-ethereum)
-  - [ ] [Erigon (go)](https://github.com/ledgerwatch/erigon)
-  - [ ] [Reth (rust)](https://github.com/paradigmxyz/reth)
-- L2 Execution clients:
-  - [x] [OP-Geth (go)](https://github.com/ethereum-optimism/optimism/tree/develop/l2geth)
-  - [ ] [OP-Erigon (go)](https://github.com/testinprod-io/op-erigon)
-  - [ ] [OP-Reth (rust)](https://github.com/clabby/op-reth)
-- Rollup clients:
-  - [x] [OP-Node (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-node)
-  - [ ] [Magi (rust)](https://github.com/a16z/magi)
-- Challenger agents:
-  - [x] [OP-Challenger (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-challenger)
-  - [ ] [OP-Challenger (rust)](https://github.com/clabby/op-challenger)
+`op-up` is **not ready for production use**.
 
+Local and devnet experimentation is highly encouraged.
+New issues are also welcome.
 
+We appreciate your patience until we release the first version of `op-up`.
+
+In the meantime, contribute, chat with us [on telegram][tg-url], and most
+importantly, have fun!
 
 ## Troubleshooting
 
-- If you are getting some "permission denied" errors, it's likely that you need to change the Docker permissions on your machine. See [this guide](https://docs.docker.com/engine/install/linux-postinstall/) for more details.
-- If you are getting the error: `Failed to install dependencies: error hardhat@2.9.6: The engine "node" is incompatible with this module.` you need to switch your NodeJS version to <=16. If you are using `nvm`, you can do so by running `nvm install 16.16.0 && nvm use 16.16.0`.
-- If you are on MacOS with Apple Silicon chip and you've installed python3 via Homebrew, you might run into this error: `env: python: No such file or directory. make: *** [Release/leveldb.a] Error 127`. To fix this, you need to create a symlink to the python3 binary like so: `sudo ln -s /Library/Developer/CommandLineTools/usr/bin/python3 /usr/local/bin/python`.
-- If you run into an issue while building the Hardhat bedrock project, please set your node version to `16.16.0`. For instance if you are using `nvm`, you can do so by running `nvm install 16.16.0 && nvm use 16.16.0`. See [this issue](https://github.com/ethereum-optimism/optimism#3087) for more details.
+Please check if your issue is covered in the [troubleshooting docs](./docs/developers/troubleshooting.md).
+
+If not, [open an issue](https://github.com/merklefruit/op-up/issues/new) with all possible relevant details.
 
 ## Contributions & Bug Reports
 
-Please report any bugs or issues you encounter by opening an issue here on GitHub. <br />
-Contributions are always welcome!
+Please report any bugs or issues you encounter by [opening a github issue](https://github.com/merklefruit/op-up/issues/new).
+
+All contributions are welcome, but if you are at all unsure, visit the [developer docs](./docs/developers/contributing.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). <br />
-Free and open-source, forever.
+This project is licensed under the [MIT License](LICENSE). Free and open-source, forever.
+
+*All our rust are belong to you.*
