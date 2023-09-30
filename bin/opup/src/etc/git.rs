@@ -1,3 +1,4 @@
+use eyre::Result;
 use std::{
     net::{SocketAddr, TcpStream},
     path::Path,
@@ -5,7 +6,6 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use eyre::Result;
 
 /// Clones a given git repository into the given directory.
 pub fn git_clone(pwd: &Path, repo: &str) -> Result<()> {

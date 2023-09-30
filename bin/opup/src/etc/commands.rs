@@ -1,6 +1,6 @@
-use std::process::{Output, Command};
-use std::path::Path;
 use eyre::Result;
+use std::path::Path;
+use std::process::{Command, Output};
 
 /// Check command checks the output of a command and returns an error if it failed.
 pub fn check_command(out: Output, err: &str) -> Result<()> {

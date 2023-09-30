@@ -1,5 +1,3 @@
-
-
 /// Macro to create a selection prompt.
 #[macro_export]
 macro_rules! make_selection {

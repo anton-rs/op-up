@@ -1,4 +1,3 @@
-
 /// Returns a list of dev accounts.
 pub fn dev_accounts() -> Vec<String> {
     [

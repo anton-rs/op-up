@@ -1,4 +1,3 @@
-
 /// Optimism monorepo git url.
 pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
 
