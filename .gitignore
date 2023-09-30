@@ -1,8 +1,10 @@
 target/
 node_modules/
 
+# Generated files
 optimism/
 optimism-rs/
+
 
 .env
 .devnet
