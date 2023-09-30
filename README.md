@@ -13,30 +13,43 @@
 
 ![](./etc/op-up-banner.png)
 
-This project was born out of the need to test out [Magi](https://github.com/a16z/magi), a rollup client built for the OP stack. Having an easy-to-use environment to spin up a local devnet is crucial for quick testing and experimentation, especially when there exist different implementations of each component in the stack.
+## What is op-up?
 
-For instance, you can use OP-Up to spin up a devnet with a [Geth](https://github.com/ethereum/go-ethereum) L1 node, an [OP-Erigon](https://github.com/testinprod-io/op-erigon) L2 node, and a [Magi](https://github.com/a16z/magi) rollup node, and test out the interoperability between them in an end-to-end fashion.
+`op-up` is the infrastructure for building composable OP Stack configurations.
+Given the growing number of OP Stack component implementations, having a simple
+service to spin up a composable devnet in a programmatical way is crucial for
+verifying superchain compatibility, general testing and experimentation.
 
-## Prerequisites
+The project was born out of the need to test out [Magi](https://github.com/a16z/magi),
+a rollup client built for the OP stack.
 
-You need to have [Rust](https://www.rust-lang.org/tools/install), [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/), [Make](https://www.gnu.org/software/make/) and [jq](https://jqlang.github.io/jq/) installed on your machine to use OP-Up.
+Have a new rollup derivation pipeline implementation for the OP Stack and want to test it?
 
-## Supported Components
+> Use `op-up` to configure an OP Stack with the new rollup derivation pipeline.
+> Then, you can spin up a local devnet and run test suites against it!
 
-- L1 Execution clients:
-  - [x] [Geth (go)](https://github.com/ethereum/go-ethereum)
-  - [ ] [Erigon (go)](https://github.com/ledgerwatch/erigon)
-  - [ ] [Reth (rust)](https://github.com/paradigmxyz/reth)
-- L2 Execution clients:
-  - [x] [OP-Geth (go)](https://github.com/ethereum-optimism/optimism/tree/develop/l2geth)
-  - [ ] [OP-Erigon (go)](https://github.com/testinprod-io/op-erigon)
-  - [ ] [OP-Reth (rust)](https://github.com/clabby/op-reth)
-- Rollup clients:
-  - [x] [OP-Node (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-node)
-  - [ ] [Magi (rust)](https://github.com/a16z/magi)
-- Challenger agents:
-  - [x] [OP-Challenger (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-challenger)
-  - [ ] [OP-Challenger (rust)](https://github.com/clabby/op-challenger)
+## What is the OP Stack?
+
+The [OP Stack](https://stack.optimism.io/) is what powers the superchain!
+
+It is a stack of various software components that, together, can be used
+to fully run a chain in the superchain. The [Optimism Collective](https://app.optimism.io/announcement) has
+already spent an enormous amount of effort and time building out the
+[specifications](https://github.com/ethereum-optimism/optimism/blob/develop/specs/README.md)
+for how [OP Stack](https://stack.optimism.io/) components work together
+in an interoperable way.
+
+For example, want to run a pure rust op-stack (almost)?
+
+You can use
+- [reth](https://github.com/paradigmxyz/reth) as an L1 execution node.
+- [op-reth](https://github.com/anton-rs/op-reth/) as an L2 node (interchangeable with [op-geth](https://github.com/ethereum-optimism/op-geth)).
+- [magi](https://github.com/a16z/magi) as the rollup node.
+
+_Note, this "op-stack" does not include the "sequencer" including the
+the proposer or batcher, as well as fault proof components._
+
+// -------------- TODO: clean up below. -------------------- //
 
 ## Usage
 
@@ -71,6 +84,30 @@ To reset the devnet state, run:
 ```sh
 make nuke
 ```
+
+
+## Prerequisites
+
+You need to have [Rust](https://www.rust-lang.org/tools/install), [Docker](https://www.docker.com/), [Docker Compose](https://docs.docker.com/compose/), [Make](https://www.gnu.org/software/make/) and [jq](https://jqlang.github.io/jq/) installed on your machine to use OP-Up.
+
+## Supported Components
+
+- L1 Execution clients:
+  - [x] [Geth (go)](https://github.com/ethereum/go-ethereum)
+  - [ ] [Erigon (go)](https://github.com/ledgerwatch/erigon)
+  - [ ] [Reth (rust)](https://github.com/paradigmxyz/reth)
+- L2 Execution clients:
+  - [x] [OP-Geth (go)](https://github.com/ethereum-optimism/optimism/tree/develop/l2geth)
+  - [ ] [OP-Erigon (go)](https://github.com/testinprod-io/op-erigon)
+  - [ ] [OP-Reth (rust)](https://github.com/clabby/op-reth)
+- Rollup clients:
+  - [x] [OP-Node (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-node)
+  - [ ] [Magi (rust)](https://github.com/a16z/magi)
+- Challenger agents:
+  - [x] [OP-Challenger (go)](https://github.com/ethereum-optimism/optimism/tree/develop/op-challenger)
+  - [ ] [OP-Challenger (rust)](https://github.com/clabby/op-challenger)
+
+
 
 ## Troubleshooting
 
