@@ -2341,6 +2341,7 @@ dependencies = [
  "jemalloc-ctl",
  "jemallocator",
  "num-bigint",
+ "project-root",
  "revm",
  "serde",
  "serde_json",
@@ -2668,6 +2669,12 @@ checksum = "3d433d9f1a3e8c1263d9456598b16fec66f4acc9a74dacffd35c7bb09b3a1328"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "project-root"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bccbff07d5ed689c4087d20d7307a52ab6141edeedf487c3876a55b86cf63df"
 
 [[package]]
 name = "proptest"

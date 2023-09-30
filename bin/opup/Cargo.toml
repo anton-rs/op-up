@@ -17,6 +17,7 @@ async-trait = "0.1.73"
 ethabi = "18.0.0"
 num-bigint = "0.4"
 thiserror = "1.0"
+project-root = "0.2.2"
 
 eyre = "0.6.8"
 inquire = "0.6.2"

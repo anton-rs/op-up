@@ -45,8 +45,8 @@ pub fn run() -> Result<()> {
 
 /// Temporary function to port the old cli.
 pub fn temp() -> Result<()> {
-    let cwd = std::env::current_dir()?;
-    let op_up_dir = cwd.parent().ok_or(eyre!("Failed to get project root"))?;
+    let proj_root = project_root::get_project_root()?;
+    let op_up_dir = proj_root.as_path();
 
     // Directories referenced
     let docker_dir = op_up_dir.join("docker");
