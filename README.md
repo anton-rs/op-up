@@ -1,10 +1,17 @@
 # op-up
 
-> **Warning**
->
-> This is a work in progress.
+[![CI](https://github.com/merklefruit/op-up/actions/workflows/ci.yml/badge.svg)][gh-ci]
+[![License](https://img.shields.io/badge/License-MIT-orange.svg)][mit-license]
+[![Chat][tg-badge]][tg-url]
 
-**OP-Up is a hive tool for testing OP-Stack-compatible software modules.**
+[mit-license]: https://opensource.org/license/mit/
+[gh-ci]: https://github.com/merklefruit/op-up/actions/workflows/ci.yml
+[tg-url]: https://t.me/+XR8_p3qjzoFiMjEx
+[tg-badge]: https://img.shields.io/badge/chat-telegram-blue
+
+**Composable OP Stack Orchestration System**
+
+![](./assets/op-up-banner.png)
 
 This project was born out of the need to test out [Magi](https://github.com/a16z/magi), a rollup client built for the OP stack. Having an easy-to-use environment to spin up a local devnet is crucial for quick testing and experimentation, especially when there exist different implementations of each component in the stack.
 
