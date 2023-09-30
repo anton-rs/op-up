@@ -1,7 +1,8 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{ArgAction, Parser};
-use std::{error::Error, sync::Arc};
-use tracing::Level;
+
+use crate::etc::telemetry;
+use crate::stack;
 
 /// Command line arguments
 #[derive(Parser, Debug)]
@@ -12,14 +13,14 @@ pub struct Args {
     v: u8,
 }
 
-pub fn main() -> Result<()> {
+pub fn run() -> Result<()> {
     let Args { v } = Args::parse();
 
-    opup::telemetry::init_tracing_subscriber(v)?;
+    telemetry::init_tracing_subscriber(v)?;
 
     tracing::info!(target: "opup", "bootstrapping op stack");
 
-    opup::boot::run()?;
+    stack::run()?;
 
     Ok(())
 }

@@ -1,3 +1,7 @@
+use anyhow::anyhow;
+use tracing::Level;
+use anyhow::Result;
+
 /// Initializes the tracing subscriber
 ///
 /// # Arguments

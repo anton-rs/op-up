@@ -1,5 +1,5 @@
 [workspace]
-members = ["bin", "crates/*"]
+members = ["bin/opup", "crates/*"]
 resolver = "2"
 
 [workspace.package]
@@ -7,6 +7,13 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["merklefruit", "refcell"]
+
+[workspace.dependencies]
+## async
+async-trait = "0.1.68"
+futures = "0.3.26"
+pin-project = "1.0.12"
+futures-util = "0.3.25"
 
 [profile.dev]
 opt-level = 1

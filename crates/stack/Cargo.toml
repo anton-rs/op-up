@@ -1,0 +1,11 @@
+[package]
+name = "stack"
+description = "stack primitives"
+
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+

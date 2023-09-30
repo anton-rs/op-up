@@ -1,5 +1,5 @@
 [package]
-name = "opup"
+name = "old-cli"
 version = "0.1.0"
 edition = "2021"
 authors = ["merklefruit", "refcell"]

@@ -8,7 +8,7 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-arbiter-core = { version = "0.5.0" }
+bollard = "0.15.0"
 tokio = { version = "1.11.0", features = ["full"] }
 ethers = { version = "2.0.10" }
 revm = { version = "3.3.0" }
@@ -18,13 +18,11 @@ ethabi = "18.0.0"
 num-bigint = "0.4"
 thiserror = "1.0"
 
+futures.workspace = true
+
 clap = { version = "4.4.3", features = ["derive"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.17"
-
-bindings = { path = "../../crates/bindings" }
-alloy-primitives = "0.4.0"
-alloy-sol-types = "0.4.0"
 
 [target.'cfg(not(windows))'.dependencies]
 jemallocator = { version = "0.5.0", optional = true }
