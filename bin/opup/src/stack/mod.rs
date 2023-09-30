@@ -1,5 +1,4 @@
 use bollard::Docker;
-use eyre::eyre;
 use eyre::Result;
 
 use std::path::Path;
@@ -142,6 +141,15 @@ pub fn temp() -> Result<()> {
 
     commands::check_command(start_l1, "Failed to start L1 execution client")?;
     net::wait_up(constants::L1_PORT, 10, 1)?;
+
+    if !genesis_l2_file.exists() {
+        tracing::info!(target: "opup", "Creating L2 and rollup genesis...");
+        let l2_genesis = Command::new("make")
+            .args(["devnet-allocs"])
+            .current_dir(&op_monorepo_dir)
+            .output()?;
+        check_command(l2_genesis, "Failed to create L2 genesis")?;
+    }
 
     // Step 3.
     // Generate network configs
