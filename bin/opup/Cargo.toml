@@ -13,7 +13,7 @@ tokio = { version = "1.11.0", features = ["full"] }
 ethers = { version = "2.0.10" }
 revm = { version = "3.3.0" }
 async-trait = "0.1.73"
-anyhow = "1.0.75"
+# anyhow = "1.0.75"
 ethabi = "18.0.0"
 num-bigint = "0.4"
 thiserror = "1.0"

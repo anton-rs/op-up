@@ -7,19 +7,13 @@ use std::{
 
 use eyre::{eyre, Result};
 
+use crate::stack::ChallengerAgent;
+use crate::stack::L1Client;
+use crate::stack::L2Client;
+use crate::stack::RollupClient;
+use crate::stack::*;
+
 use crate::etc::macros::make_selection;
-
-pub mod l1_client;
-pub use l1_client::{L1Client, ERIGON, GETH};
-
-pub mod l2_client;
-pub use l2_client::{L2Client, OP_ERIGON, OP_GETH};
-
-pub mod rollup;
-pub use rollup::{RollupClient, MAGI, OP_NODE};
-
-pub mod challenger;
-pub use challenger::{ChallengerAgent, OP_CHALLENGER_GO, OP_CHALLENGER_RUST};
 
 /// ## OP Stack Config
 ///

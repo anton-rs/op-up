@@ -1,4 +1,4 @@
-use anyhow::Result;
+use eyre::Result;
 use std::future::Future;
 
 /// Creates a new fully-featured tokio multi-thread [Runtime](tokio::runtime::Runtime).

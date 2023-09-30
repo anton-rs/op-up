@@ -1,13 +1,22 @@
-use anyhow::Result;
 use bollard::Docker;
+use eyre::eyre;
+use eyre::Result;
 
 use std::path::Path;
+use std::process::Command;
+
+use inquire::Confirm;
 
 pub(crate) mod challenger;
 pub(crate) mod config;
 pub(crate) mod l1_client;
 pub(crate) mod l2_client;
 pub(crate) mod rollup;
+
+pub use challenger::{ChallengerAgent, OP_CHALLENGER_GO, OP_CHALLENGER_RUST};
+pub use l1_client::{L1Client, ERIGON, GETH};
+pub use l2_client::{L2Client, OP_ERIGON, OP_GETH};
+pub use rollup::{RollupClient, MAGI, OP_NODE};
 
 use crate::{
     addresses, constants,
@@ -238,7 +247,7 @@ pub fn temp() -> Result<()> {
     // Start batcher
 
     println!("Starting batcher...");
-    let rollup_config = utils::read_json(&genesis_rollup_file)?;
+    let rollup_config = json::read_json(&genesis_rollup_file)?;
     let start_batcher = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "batcher"])
         .env("PWD", docker_dir.to_str().unwrap())

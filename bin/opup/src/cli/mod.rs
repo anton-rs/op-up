@@ -1,5 +1,5 @@
-use anyhow::Result;
 use clap::{ArgAction, Parser};
+use eyre::Result;
 
 use crate::etc::telemetry;
 use crate::stack;

@@ -1,6 +1,7 @@
 use eyre::Result;
 use std::net::{SocketAddr, TcpStream};
 use std::thread;
+use std::time::Duration;
 
 /// Wait for a port to come up.
 pub fn wait_up(port: u16, retries: u32, wait_secs: u64) -> Result<()> {
@@ -13,8 +14,6 @@ pub fn wait_up(port: u16, retries: u32, wait_secs: u64) -> Result<()> {
         }
         thread::sleep(Duration::from_secs(wait_secs));
     }
-
-    eyre::bail!("Timed out waiting for port {}.", port);
 
     Err(eyre::eyre!("Timed out waiting for port {}.", port))
 }

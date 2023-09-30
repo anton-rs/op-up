@@ -1,5 +1,4 @@
-use anyhow::anyhow;
-use anyhow::Result;
+use eyre::Result;
 use tracing::Level;
 
 /// Initializes the tracing subscriber
@@ -19,5 +18,5 @@ pub fn init_tracing_subscriber(verbosity_level: u8) -> Result<()> {
             _ => Level::TRACE,
         })
         .finish();
-    tracing::subscriber::set_global_default(subscriber).map_err(|e| anyhow!(e))
+    tracing::subscriber::set_global_default(subscriber).map_err(|e| eyre::eyre!(e))
 }

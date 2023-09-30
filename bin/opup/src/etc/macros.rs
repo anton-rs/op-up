@@ -8,3 +8,4 @@ macro_rules! make_selection {
             .to_string();
     };
 }
+pub(crate) use make_selection;

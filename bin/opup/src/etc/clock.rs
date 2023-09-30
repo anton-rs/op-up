@@ -1,4 +1,4 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Returns the current timestamp in seconds.
 pub fn current_timestamp() -> u64 {
