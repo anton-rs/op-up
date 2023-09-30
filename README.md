@@ -11,7 +11,7 @@
 
 **Composable OP Stack Orchestration System**
 
-![](./assets/op-up-banner.png)
+![](./etc/op-up-banner.png)
 
 This project was born out of the need to test out [Magi](https://github.com/a16z/magi), a rollup client built for the OP stack. Having an easy-to-use environment to spin up a local devnet is crucial for quick testing and experimentation, especially when there exist different implementations of each component in the stack.
 
