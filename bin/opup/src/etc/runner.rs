@@ -1,5 +1,5 @@
-use std::future::Future;
 use anyhow::Result;
+use std::future::Future;
 
 /// Creates a new fully-featured tokio multi-thread [Runtime](tokio::runtime::Runtime).
 pub fn tokio_runtime() -> Result<tokio::runtime::Runtime> {
@@ -26,7 +26,9 @@ where
 {
     let tokio_runtime = tokio_runtime()?;
     let handle = tokio_runtime.handle().clone();
-    let fut = tokio_runtime.handle().spawn_blocking(move || handle.block_on(fut));
+    let fut = tokio_runtime
+        .handle()
+        .spawn_blocking(move || handle.block_on(fut));
     tokio_runtime.block_on(async move { fut.await.expect("join task") })?;
     std::thread::spawn(move || drop(tokio_runtime));
     Ok(())
