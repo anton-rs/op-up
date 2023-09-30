@@ -106,9 +106,7 @@ make nuke
 By building with Rust's [crate system](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html),
 `op-up` can easily be used as a library in an extensible way.
 
-## Status
-
-https://github.com/merklefruit/op-up/labels/beta
+## Status https://github.com/merklefruit/op-up/labels/beta
 
 `op-up` is **not ready for production use**.
 
