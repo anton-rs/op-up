@@ -14,6 +14,7 @@ repository.workspace = true
 op-stack = { path = "../stack" }
 
 # Formatting
+inquire = "0.6.2"
 Inflector = "0.11"
 figment = { version = "0.10", features = ["toml", "env"] }
 number_prefix = "0.4"
@@ -22,6 +23,8 @@ serde_regex = "1"
 serde_json = "1"
 toml = { version = "0.7", features = ["preserve_order"] }
 toml_edit = "0.19"
+
+strum = { version = "0.25", features = ["derive"] }
 
 # Filesystem
 dirs-next = "2"

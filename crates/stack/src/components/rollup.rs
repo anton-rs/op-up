@@ -8,10 +8,13 @@ use strum::EnumIter;
 ///
 /// The OP Stack rollup client performs the derivation of the rollup state
 /// from the L1 and L2 clients.
-#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[derive(
+    Default, Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
+)]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum RollupClient {
     /// OP Node
+    #[default]
     OpNode,
     /// Magi
     Magi,

@@ -9,10 +9,13 @@ use strum::EnumIter;
 /// The OP Stack L2 client is a minimally modified version of the L1 client
 /// that supports deposit transactions as well as a few other small OP-specific
 /// changes.
-#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[derive(
+    Default, Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
+)]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L2Client {
     /// OP Geth
+    #[default]
     OpGeth,
     /// OP Erigon
     OpErigon,

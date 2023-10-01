@@ -5,10 +5,13 @@ use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
 /// Challenger Agent Implementations
-#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[derive(
+    Default, Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
+)]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum ChallengerAgent {
     /// A Go implementation of the challenger agent
+    #[default]
     OpChallengerGo,
     /// A Rust implementation of the challenger agent
     OpChallengerRust,

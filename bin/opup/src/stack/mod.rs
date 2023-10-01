@@ -1,10 +1,9 @@
 use bollard::Docker;
 use eyre::Result;
-
 use std::path::Path;
 use std::process::Command;
 
-use inquire::Confirm;
+use op_config::Config;
 
 use crate::{
     addresses, constants,
@@ -47,7 +46,6 @@ pub fn temp() -> Result<()> {
     let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
     // Files referenced
-    let stack_file = op_up_dir.join(".stack");
     let genesis_l1_file = devnet_dir.join("genesis-l1.json");
     let genesis_l2_file = devnet_dir.join("genesis-l2.json");
     let genesis_rollup_file = devnet_dir.join("rollup.json");
@@ -55,35 +53,11 @@ pub fn temp() -> Result<()> {
     let addresses_sdk_json_file = devnet_dir.join("addresses-sdk.json");
     let deploy_config_file = deploy_config_dir.join("devnetL1.json");
 
-    // ----------------------------------------
     // Create a new op-stack config object from user choices
     // (or load an existing one from the .stack file if it exists)
-
-    let stack = if stack_file.exists() {
-        let existing_stack = op_stack::read_from_file(&stack_file)?;
-        tracing::info!(target: "opup", "Looks like you've already got an existing op-stack loaded!");
-
-        let use_existing = Confirm::new("Do you want to use the existing stack?")
-            .with_default(true)
-            .with_help_message(existing_stack.to_string().as_str())
-            .prompt()?;
-
-        if use_existing {
-            tracing::info!(target: "opup", "\nGreat! We'll use the existing stack.");
-            existing_stack
-        } else {
-            std::fs::remove_file(&stack_file)?;
-            tracing::info!(target: "opup", "\nOk, we'll start from scratch then.");
-            op_stack::OpStackConfig::from_user_choices()?
-        }
-    } else {
-        tracing::info!(target: "opup", "\nWelcome to the interactive op-stack devnet builder!");
-        tracing::info!(target: "opup", "Please select your desired op-stack components:\n");
-        op_stack::OpStackConfig::from_user_choices()?
-    };
-
-    // Remember the selected stack for next time
-    op_stack::write_to_file(&stack_file, &stack)?;
+    tracing::info!(target: "opup", "Loading op-stack config...");
+    let current_dir = std::env::current_dir()?;
+    let stack = Config::load_with_root(current_dir);
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
     // If not, clone them from Github

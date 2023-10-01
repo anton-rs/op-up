@@ -1,0 +1,8 @@
+
+[profile.default]
+l1-client = 'reth'
+l2-client = 'op-reth'
+rollup = 'magi'
+challenger = 'op-challenger-go'
+
+
