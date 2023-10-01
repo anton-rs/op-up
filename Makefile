@@ -1,5 +1,5 @@
 devnet:
-	cd cli && cargo run
+	cargo run
 
 devnet-stop:
 	cd docker && docker-compose down
