@@ -1,11 +1,13 @@
 use std::{fmt::Display, str::FromStr};
 
 use eyre::{bail, Report};
+use serde::{Deserialize, Serialize};
 
 // Rollup clients
 pub const OP_NODE: &str = "op-node";
 pub const MAGI: &str = "magi";
 
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum RollupClient {
     OpNode,
     Magi,

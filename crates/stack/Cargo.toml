@@ -1,5 +1,5 @@
 [package]
-name = "stack"
+name = "op-stack"
 description = "stack primitives"
 
 edition.workspace = true
@@ -8,4 +8,9 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-
+eyre = "0.6.8"
+inquire = "0.6.2"
+serde = "1.0.163"
+serde_json = "1.0.96"
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"

@@ -1,11 +1,13 @@
 use std::{fmt::Display, str::FromStr};
 
 use eyre::{bail, Report};
+use serde::{Deserialize, Serialize};
 
 // L2 clients
 pub const OP_GETH: &str = "op-geth";
 pub const OP_ERIGON: &str = "op-erigon";
 
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum L2Client {
     OpGeth,
     OpErigon,

@@ -1,11 +1,13 @@
 use std::{fmt::Display, str::FromStr};
 
 use eyre::{bail, Report};
+use serde::{Deserialize, Serialize};
 
 // Challenger agents
 pub const OP_CHALLENGER_GO: &str = "op-challenger-go";
 pub const OP_CHALLENGER_RUST: &str = "op-challenger-rust";
 
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum ChallengerAgent {
     OpChallengerGo,
     OpChallengerRust,

@@ -18,6 +18,3 @@ pub mod json;
 
 /// System clock helpers.
 pub mod clock;
-
-/// Various macros.
-pub mod macros;
