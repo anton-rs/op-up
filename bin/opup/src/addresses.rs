@@ -3,8 +3,9 @@ use std::{fs, path::Path};
 use eyre::Result;
 use serde_json::{Map, Value};
 
-use crate::{constants, utils};
+use crate::{constants, etc};
 
+/// Returns a set of addresses and SDK addresses using the given deployment directory.
 pub fn set_addresses(deployment_dir: &Path) -> Result<(Value, Value)> {
     let mut addresses = Map::new();
     let mut sdk_addresses = Map::new();
@@ -16,7 +17,7 @@ pub fn set_addresses(deployment_dir: &Path) -> Result<(Value, Value)> {
         if path.is_file() && path.extension().unwrap_or_default() == "json" {
             // We can safely unwrap because the file exists and it has a name
             let file_name = path.file_stem().unwrap().to_string_lossy().to_string();
-            let data = utils::read_json(&path)?;
+            let data = etc::json::read_json(&path)?;
 
             if let Some(address) = data["address"].as_str() {
                 addresses.insert(file_name, address.to_owned().into());

@@ -1,0 +1,36 @@
+[package]
+name = "opup"
+description = "Spin up a composable OP Stack, programmatically."
+
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+op-config = { path = "../../crates/config" }
+op-stack = { path = "../../crates/stack" }
+
+bollard = "0.15.0"
+project-root = "0.2.2"
+
+tokio = { version = "1.11.0", features = ["full"] }
+eyre = "0.6.8"
+inquire = "0.6.2"
+serde = "1.0.163"
+serde_json = "1.0.96"
+
+futures.workspace = true
+
+clap = { version = "4.4.3", features = ["derive"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
+
+[target.'cfg(not(windows))'.dependencies]
+jemallocator = { version = "0.5.0", optional = true }
+jemalloc-ctl = { version = "0.5.0", optional = true }
+
+[features]
+default = ["jemalloc"]
+jemalloc = ["dep:jemallocator", "dep:jemalloc-ctl"]
+jemalloc-prof = ["jemalloc", "jemallocator?/profiling"]

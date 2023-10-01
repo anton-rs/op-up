@@ -1,4 +1,5 @@
-fn dev_accounts() -> Vec<String> {
+/// Returns a list of dev accounts.
+pub fn dev_accounts() -> Vec<String> {
     [
         "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc",
         "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
@@ -12,6 +13,7 @@ fn dev_accounts() -> Vec<String> {
 
 const ESCAPE_SEQ: &str = ",\n            ";
 
+/// Returns a genesis template with the given timestamp.
 pub fn genesis_template(timestamp: u64) -> String {
     let accounts_alloc = (1..=255)
     .map(|i| format!(r#""0x{:0>40}": {{"balance": "0x1"}}"#, i))

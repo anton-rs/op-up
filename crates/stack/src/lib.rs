@@ -1,3 +1,13 @@
+#![doc = include_str!("../README.md")]
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    unreachable_pub,
+    rustdoc::all
+)]
+#![deny(unused_must_use, rust_2018_idioms)]
+#![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
+
 use std::{
     fmt::Display,
     fs::File,
@@ -6,29 +16,27 @@ use std::{
 };
 
 use eyre::{eyre, Result};
+use strum::IntoEnumIterator;
 
-use crate::{make_selection, stack};
-
-pub mod l1_client;
-pub use l1_client::{L1Client, ERIGON, GETH};
-
-pub mod l2_client;
-pub use l2_client::{L2Client, OP_ERIGON, OP_GETH};
-
-pub mod rollup_client;
-pub use rollup_client::{RollupClient, MAGI, OP_NODE};
-
-pub mod challenger_agent;
-pub use challenger_agent::{ChallengerAgent, OP_CHALLENGER_GO, OP_CHALLENGER_RUST};
+/// Core components of the OP Stack
+pub mod components;
+pub use components::{
+    challenger::ChallengerAgent, layer_one::L1Client, layer_two::L2Client, rollup::RollupClient,
+};
 
 /// ## OP Stack Config
 ///
 /// Struct to hold the user's choices for the op-stack components
 /// that they want to use for their devnet
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpStackConfig {
+    /// The L1 Client.
     pub l1_client: L1Client,
+    /// The L2 Client.
     pub l2_client: L2Client,
+    /// The Rollup Client.
     pub rollup_client: RollupClient,
+    /// Challenger.
     pub challenger: ChallengerAgent,
 }
 
@@ -42,6 +50,17 @@ impl Display for OpStackConfig {
     }
 }
 
+/// Macro to create a selection prompt.
+#[macro_export]
+macro_rules! make_selection {
+    ($name:ident, $prompt:expr, $options:expr) => {
+        let $name = inquire::Select::new($prompt, $options)
+            .without_help_message()
+            .prompt()?
+            .to_string();
+    };
+}
+
 impl OpStackConfig {
     /// ## Generate a new OP Stack config object from user choices
     ///
@@ -51,28 +70,28 @@ impl OpStackConfig {
         make_selection!(
             l1_client,
             "Which L1 execution client would you like to use?",
-            vec![stack::GETH, stack::ERIGON]
+            L1Client::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             l2_client,
             "Which L2 execution client would you like to use?",
-            vec![stack::OP_GETH, stack::OP_ERIGON]
+            L2Client::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             rollup_client,
             "Which rollup client would you like to use?",
-            vec![stack::OP_NODE, stack::MAGI]
+            RollupClient::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             challenger,
             "Which challenger agent would you like to use?",
-            vec![stack::OP_CHALLENGER_GO, stack::OP_CHALLENGER_RUST]
+            ChallengerAgent::iter().collect::<Vec<_>>()
         );
 
-        println!("\nNice choice! You've got great taste ✨");
+        tracing::debug!(target: "stack", "Nice choice! You've got great taste ✨");
 
         Ok(OpStackConfig {
             l1_client: l1_client.parse()?,
@@ -83,6 +102,7 @@ impl OpStackConfig {
     }
 }
 
+/// Read the op stack config to a file.
 pub fn read_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     let file = File::open(file)?;
     let reader = BufReader::new(file);
@@ -112,6 +132,7 @@ pub fn read_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     })
 }
 
+/// Write the op stack config to a file
 pub fn write_to_file(file: &PathBuf, stack: &OpStackConfig) -> Result<()> {
     let file = File::create(file)?;
     let mut writer = BufWriter::new(file);

@@ -1,33 +1,40 @@
-use std::{fs, path::Path, process::Command};
+use bollard::Docker;
+use eyre::Result;
 
-use eyre::{eyre, Result};
+use std::path::Path;
+use std::process::Command;
+
 use inquire::Confirm;
 
-use crate::stack::OpStackConfig;
+use crate::{
+    addresses, constants,
+    etc::{
+        clock,
+        commands::{self, check_command},
+        git, json, net, runner,
+    },
+    genesis,
+};
 
-mod constants;
-mod genesis;
-mod set_addresses;
-mod stack;
-mod utils;
+/// Spin up the stack.
+pub fn run() -> Result<()> {
+    runner::run_until_ctrl_c(async {
+        let docker = Docker::connect_with_local_defaults()?;
+        let version = docker.version().await?;
+        tracing::info!(target: "opup", "docker version: {:?}", version);
 
-fn main() -> Result<()> {
-    println!(
-        r#"                        
-                                         
-        ___   _____            __  __  _____   
-       / __`\/\ '__`\  _______/\ \/\ \/\ '__`\ 
-      /\ \L\ \ \ \L\ \/\______\ \ \_\ \ \ \L\ \
-      \ \____/\ \ ,__/\/______/\ \____/\ \ ,__/
-       \/___/  \ \ \/           \/___/  \ \ \/ 
-                \ \_\                    \ \_\ 
-                 \/_/                     \/_/ 
-      
-      "#
-    );
+        crate::banners::banner()?;
 
-    let cwd = std::env::current_dir()?;
-    let op_up_dir = cwd.parent().ok_or(eyre!("Failed to get project root"))?;
+        temp()?;
+
+        Ok(())
+    })
+}
+
+/// Temporary function to port the old cli.
+pub fn temp() -> Result<()> {
+    let proj_root = project_root::get_project_root()?;
+    let op_up_dir = proj_root.as_path();
 
     // Directories referenced
     let docker_dir = op_up_dir.join("docker");
@@ -53,8 +60,8 @@ fn main() -> Result<()> {
     // (or load an existing one from the .stack file if it exists)
 
     let stack = if stack_file.exists() {
-        let existing_stack = stack::read_from_file(&stack_file)?;
-        println!("Looks like you've already got an existing op-stack loaded!");
+        let existing_stack = op_stack::read_from_file(&stack_file)?;
+        tracing::info!(target: "opup", "Looks like you've already got an existing op-stack loaded!");
 
         let use_existing = Confirm::new("Do you want to use the existing stack?")
             .with_default(true)
@@ -62,31 +69,32 @@ fn main() -> Result<()> {
             .prompt()?;
 
         if use_existing {
-            println!("\nGreat! We'll use the existing stack.");
+            tracing::info!(target: "opup", "\nGreat! We'll use the existing stack.");
             existing_stack
         } else {
-            fs::remove_file(&stack_file)?;
-            println!("\nOk, we'll start from scratch then.");
-            OpStackConfig::from_user_choices()?
+            std::fs::remove_file(&stack_file)?;
+            tracing::info!(target: "opup", "\nOk, we'll start from scratch then.");
+            op_stack::OpStackConfig::from_user_choices()?
         }
     } else {
-        println!("\nWelcome to the interactive op-stack devnet builder!");
-        println!("Please select your desired op-stack components:\n");
-        OpStackConfig::from_user_choices()?
+        tracing::info!(target: "opup", "\nWelcome to the interactive op-stack devnet builder!");
+        tracing::info!(target: "opup", "Please select your desired op-stack components:\n");
+        op_stack::OpStackConfig::from_user_choices()?
     };
 
     // Remember the selected stack for next time
-    stack::write_to_file(&stack_file, &stack)?;
+    op_stack::write_to_file(&stack_file, &stack)?;
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
     // If not, clone them from Github
     if !Path::new(&op_monorepo_dir).exists() {
-        println!("Cloning the optimism monorepo from github (this may take a while)...");
-        utils::git_clone(op_up_dir, constants::OP_MONOREPO_URL)?;
+        tracing::info!(target: "opup", "Cloning the optimism monorepo from github (this may take a while)...");
+        git::git_clone(op_up_dir, constants::OP_MONOREPO_URL)?;
     }
+    // There is no more optimism-rs monorepo :{
     if !Path::new(&op_rs_monorepo_dir).exists() {
-        println!("Cloning the optimism-rs monorepo from github (this may take a while)...");
-        utils::git_clone(op_up_dir, constants::OP_RS_MONOREPO_URL)?;
+        tracing::info!(target: "opup", "Cloning the optimism-rs monorepo from github (this may take a while)...");
+        // git::git_clone(op_up_dir, constants::OP_RS_MONOREPO_URL)?;
     }
 
     // ----------------------------------------
@@ -95,25 +103,24 @@ fn main() -> Result<()> {
     // Step 0.
     // Setup
 
-    println!("\nBuilding devnet...");
-    fs::create_dir_all(devnet_dir)?;
-    let curr_timestamp = utils::current_timestamp();
+    tracing::info!(target: "opup", "Building devnet...");
+    std::fs::create_dir_all(devnet_dir)?;
+    let curr_timestamp = clock::current_timestamp();
     let genesis_template = genesis::genesis_template(curr_timestamp);
 
     // Step 1.
     // Create L1 genesis
-
     if !genesis_l1_file.exists() {
-        println!("Creating L1 genesis...");
-        fs::write(genesis_l1_file, genesis_template)?;
+        tracing::info!(target: "opup", "Creating L1 genesis...");
+        std::fs::write(genesis_l1_file, genesis_template)?;
     } else {
-        println!("L1 genesis already found.");
+        tracing::info!(target: "opup", "L1 genesis already found.");
     }
 
     // Step 2.
     // Start L1 execution client
 
-    println!("Starting L1 execution client...");
+    tracing::info!(target: "opup", "Starting L1 execution client...");
     let start_l1 = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "l1"])
         .env("PWD", docker_dir.to_str().unwrap())
@@ -121,32 +128,39 @@ fn main() -> Result<()> {
         .current_dir(&docker_dir)
         .output()?;
 
-    utils::check_command(start_l1, "Failed to start L1 execution client")?;
-    utils::wait_up(constants::L1_PORT, 10, 1)?;
+    commands::check_command(start_l1, "Failed to start L1 execution client")?;
+    net::wait_up(constants::L1_PORT, 10, 1)?;
+
+    if !genesis_l2_file.exists() {
+        tracing::info!(target: "opup", "Creating L2 and rollup genesis...");
+        let l2_genesis = Command::new("make")
+            .args(["devnet-allocs"])
+            .current_dir(&op_monorepo_dir)
+            .output()?;
+        check_command(l2_genesis, "Failed to create L2 genesis")?;
+    }
 
     // Step 3.
     // Generate network configs
-
-    println!("Generating network configs...");
-    let mut deploy_config = utils::read_json(&deploy_config_file)?;
-    utils::set_json_property(
+    tracing::info!(target: "opup", "Generating network configs...");
+    let mut deploy_config = json::read_json(&deploy_config_file)?;
+    json::set_json_property(
         &mut deploy_config,
         "l1GenesisBlockTimestamp",
         curr_timestamp,
     );
-    utils::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
-    utils::write_json(&deploy_config_file, &deploy_config)?;
+    json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
+    json::write_json(&deploy_config_file, &deploy_config)?;
 
     // Step 4.
     // Deploy contracts
-
     let addresses = if !addresses_json_file.exists() {
         println!("Deploying contracts...");
         let install_deps = Command::new("yarn")
             .args(["install"])
             .current_dir(&contracts_bedrock_dir)
             .output()?;
-        utils::check_command(install_deps, "Failed to install dependencies")?;
+        check_command(install_deps, "Failed to install dependencies")?;
 
         let deploy_contracts = Command::new("yarn")
             .args(["hardhat", "--network", "devnetL1", "deploy", "--tags", "l1"])
@@ -156,24 +170,24 @@ fn main() -> Result<()> {
             .current_dir(&contracts_bedrock_dir)
             .output()?;
 
-        utils::check_command(deploy_contracts, "Failed to deploy contracts")?;
+        check_command(deploy_contracts, "Failed to deploy contracts")?;
 
         // Write the addresses to json
-        let (addresses, sdk_addresses) = set_addresses::set_addresses(&deployment_dir)?;
-        utils::write_json(&addresses_json_file, &addresses)?;
-        utils::write_json(&addresses_sdk_json_file, &sdk_addresses)?;
+        let (addresses, sdk_addresses) = addresses::set_addresses(&deployment_dir)?;
+        json::write_json(&addresses_json_file, &addresses)?;
+        json::write_json(&addresses_sdk_json_file, &sdk_addresses)?;
 
         addresses
     } else {
-        println!("Contracts already deployed.");
-        utils::read_json(&addresses_json_file)?
+        tracing::info!(target: "opup", "Contracts already deployed.");
+        json::read_json(&addresses_json_file)?
     };
 
     // Step 5.
     // Create L2 genesis
 
     if !genesis_l2_file.exists() {
-        println!("Creating L2 and rollup genesis...");
+        tracing::info!(target: "opup", "Creating L2 and rollup genesis...");
         let l2_genesis = Command::new("go")
             .args(["run", "cmd/main.go", "genesis", "l2"])
             .args(["--l1-rpc", constants::L1_URL])
@@ -183,9 +197,9 @@ fn main() -> Result<()> {
             .args(["--outfile.rollup", genesis_rollup_file.to_str().unwrap()])
             .current_dir(&op_node_dir)
             .output()?;
-        utils::check_command(l2_genesis, "Failed to create L2 genesis")?;
+        check_command(l2_genesis, "Failed to create L2 genesis")?;
     } else {
-        println!("L2 genesis already found.");
+        tracing::info!(target: "opup", "L2 genesis already found.");
     }
 
     // Step 6.
@@ -198,8 +212,8 @@ fn main() -> Result<()> {
         .env("L2_CLIENT_CHOICE", stack.l2_client.to_string())
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_l2, "Failed to start L2 execution client")?;
-    utils::wait_up(constants::L2_PORT, 10, 1)?;
+    check_command(start_l2, "Failed to start L2 execution client")?;
+    net::wait_up(constants::L2_PORT, 10, 1)?;
 
     // Step 7.
     // Start rollup client
@@ -211,8 +225,8 @@ fn main() -> Result<()> {
         .env("ROLLUP_CLIENT_CHOICE", stack.rollup_client.to_string())
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_rollup, "Failed to start rollup client")?;
-    utils::wait_up(constants::ROLLUP_PORT, 30, 1)?;
+    check_command(start_rollup, "Failed to start rollup client")?;
+    net::wait_up(constants::ROLLUP_PORT, 30, 1)?;
 
     // Step 8.
     // Start proposer
@@ -224,13 +238,13 @@ fn main() -> Result<()> {
         .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_proposer, "Failed to start proposer")?;
+    check_command(start_proposer, "Failed to start proposer")?;
 
     // Step 9.
     // Start batcher
 
     println!("Starting batcher...");
-    let rollup_config = utils::read_json(&genesis_rollup_file)?;
+    let rollup_config = json::read_json(&genesis_rollup_file)?;
     let start_batcher = Command::new("docker-compose")
         .args(["up", "-d", "--no-deps", "--build", "batcher"])
         .env("PWD", docker_dir.to_str().unwrap())
@@ -241,7 +255,7 @@ fn main() -> Result<()> {
         )
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_batcher, "Failed to start batcher")?;
+    check_command(start_batcher, "Failed to start batcher")?;
 
     // Step 10.
     // Start challenger
@@ -258,7 +272,7 @@ fn main() -> Result<()> {
         .env("CHALLENGER_AGENT_CHOICE", stack.challenger.to_string())
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_challenger, "Failed to start challenger")?;
+    check_command(start_challenger, "Failed to start challenger")?;
 
     // Step 11.
     // Start stateviz
@@ -268,7 +282,7 @@ fn main() -> Result<()> {
         .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
         .current_dir(&docker_dir)
         .output()?;
-    utils::check_command(start_stateviz, "Failed to start stateviz")?;
+    check_command(start_stateviz, "Failed to start stateviz")?;
 
     // Done!
 
