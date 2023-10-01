@@ -6,17 +6,6 @@ use std::process::Command;
 
 use inquire::Confirm;
 
-pub(crate) mod challenger;
-pub(crate) mod config;
-pub(crate) mod l1_client;
-pub(crate) mod l2_client;
-pub(crate) mod rollup;
-
-pub use challenger::{ChallengerAgent, OP_CHALLENGER_GO, OP_CHALLENGER_RUST};
-pub use l1_client::{L1Client, ERIGON, GETH};
-pub use l2_client::{L2Client, OP_ERIGON, OP_GETH};
-pub use rollup::{RollupClient, MAGI, OP_NODE};
-
 use crate::{
     addresses, constants,
     etc::{
@@ -71,7 +60,7 @@ pub fn temp() -> Result<()> {
     // (or load an existing one from the .stack file if it exists)
 
     let stack = if stack_file.exists() {
-        let existing_stack = config::read_from_file(&stack_file)?;
+        let existing_stack = op_stack::read_from_file(&stack_file)?;
         tracing::info!(target: "opup", "Looks like you've already got an existing op-stack loaded!");
 
         let use_existing = Confirm::new("Do you want to use the existing stack?")
@@ -85,16 +74,16 @@ pub fn temp() -> Result<()> {
         } else {
             std::fs::remove_file(&stack_file)?;
             tracing::info!(target: "opup", "\nOk, we'll start from scratch then.");
-            config::OpStackConfig::from_user_choices()?
+            op_stack::OpStackConfig::from_user_choices()?
         }
     } else {
         tracing::info!(target: "opup", "\nWelcome to the interactive op-stack devnet builder!");
         tracing::info!(target: "opup", "Please select your desired op-stack components:\n");
-        config::OpStackConfig::from_user_choices()?
+        op_stack::OpStackConfig::from_user_choices()?
     };
 
     // Remember the selected stack for next time
-    config::write_to_file(&stack_file, &stack)?;
+    op_stack::write_to_file(&stack_file, &stack)?;
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
     // If not, clone them from Github
