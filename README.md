@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-orange.svg)][mit-license]
 [![Chat][tg-badge]][tg-url]
 
-[mit-license]: https://opensource.org/license/mit/
+[mit-license]: https://github.com/anton-rs/op-up/blob/main/LICENSE.md
 [gh-ci]: https://github.com/anton-rs/op-up/actions/workflows/ci.yml
 [tg-url]: https://t.me/+XR8_p3qjzoFiMjEx
 [tg-badge]: https://img.shields.io/badge/chat-telegram-blue
@@ -18,7 +18,7 @@
 | [Developer Docs](./docs/developers/developers.md)
 | [Crate Docs](https://crates.io/crates/opup)
 
-_The project is still work in progress, see the [disclaimer below](#status)._
+_The project is still work in progress, see the [disclaimer below](#status-httpsgithubcomanton-rsop-uplabelsalpha)._
 
 ## What is op-up?
 
@@ -74,7 +74,7 @@ git clone git@github.com:anton-rs/op-up.git && cd op-up
 make devnet
 ```
 
-This will bring up a devnet using a local devnet with default components.
+This will bring up a local devnet using the default components.
 
 Once the devnet is up and running, L1 is accessible at `http://localhost:8545`, and L2 is accessible at `http://localhost:9545`.
 Any Ethereum tool - Metamask, `seth`, etc. - can use these endpoints.
@@ -132,6 +132,6 @@ All contributions are welcome, but if you are at all unsure, visit the [develope
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). Free and open-source, forever.
+This project is licensed under the [MIT License](LICENSE.md). Free and open-source, forever.
 
 _All our rust are belong to you._
