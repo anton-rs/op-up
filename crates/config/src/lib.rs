@@ -274,7 +274,7 @@ impl Config {
         Profile::from_env_or("STACK_PROFILE", Config::DEFAULT_PROFILE)
     }
 
-    /// Returns the path to foundry's global toml file that's stored at `~/.stack/stack.toml`
+    /// Returns the path to the global toml file that's stored at `~/.stack/stack.toml`
     pub fn stack_dir_toml() -> Option<PathBuf> {
         Self::stack_dir().map(|p| p.join(Config::FILE_NAME))
     }

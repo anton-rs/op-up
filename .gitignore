@@ -1,12 +1,14 @@
+# Rust files
 target/
-node_modules/
 
 # Generated files
 optimism/
-optimism-rs/
-
-
-.env
 .devnet
-.stack
+node_modules/
+
+# Environment Variables
+.env
+.env.prod
+
+# Mac OS files
 .DS_Store
