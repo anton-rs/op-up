@@ -28,15 +28,16 @@ mod toml;
 pub use toml::TomlFileProvider;
 
 mod rename;
-use rename::RenameProfileProvider;
+pub use rename::RenameProfileProvider;
 
 mod wraps;
-use wraps::WrapProfileProvider;
+pub use wraps::WrapProfileProvider;
 
 mod optional;
-use optional::OptionalStrictProfileProvider;
+pub use optional::OptionalStrictProfileProvider;
 
 mod unwraps;
+pub use unwraps::UnwrapProfileProvider;
 
 use op_stack::components::{
     challenger::ChallengerAgent, layer_one::L1Client, layer_two::L2Client, rollup::RollupClient,

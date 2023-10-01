@@ -19,6 +19,7 @@ use figment::{
 /// [to]
 /// key = "value"
 /// ```
+#[derive(Debug)]
 pub struct RenameProfileProvider<P> {
     provider: P,
     from: Profile,
@@ -26,6 +27,8 @@ pub struct RenameProfileProvider<P> {
 }
 
 impl<P> RenameProfileProvider<P> {
+    /// Creates a new `RenameProfileProvider` from the given provider and profiles
+    #[allow(dead_code)]
     pub fn new(provider: P, from: impl Into<Profile>, to: impl Into<Profile>) -> Self {
         Self {
             provider,

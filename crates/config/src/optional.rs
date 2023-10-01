@@ -28,14 +28,17 @@ use crate::unwraps::UnwrapProfileProvider;
 /// ```
 ///
 /// And emit a deprecation warning
+#[derive(Debug)]
 pub struct OptionalStrictProfileProvider<P> {
     provider: P,
     profiles: Vec<Profile>,
 }
 
 impl<P> OptionalStrictProfileProvider<P> {
-    pub const PROFILE_PROFILE: Profile = Profile::const_new("profile");
+    pub(crate) const PROFILE_PROFILE: Profile = Profile::const_new("profile");
 
+    /// Creates a new `OptionalStrictProfileProvider` from the given provider and profiles
+    #[allow(dead_code)]
     pub fn new(provider: P, profiles: impl IntoIterator<Item = impl Into<Profile>>) -> Self {
         Self {
             provider,

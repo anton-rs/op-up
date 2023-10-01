@@ -19,6 +19,7 @@ use figment::{
 /// [profile]
 /// key = "value"
 /// ```
+#[derive(Debug)]
 pub struct UnwrapProfileProvider<P> {
     provider: P,
     wrapping_key: Profile,
@@ -26,6 +27,8 @@ pub struct UnwrapProfileProvider<P> {
 }
 
 impl<P> UnwrapProfileProvider<P> {
+    /// Creates a new `UnwrapProfileProvider` from the given provider and profiles.
+    #[allow(dead_code)]
     pub fn new(provider: P, wrapping_key: impl Into<Profile>, profile: impl Into<Profile>) -> Self {
         Self {
             provider,

@@ -20,6 +20,7 @@ use inflector::Inflector;
 /// [wrapping_key.profile]
 /// key = "value"
 /// ```
+#[derive(Debug)]
 pub struct WrapProfileProvider<P> {
     provider: P,
     wrapping_key: Profile,
@@ -27,6 +28,8 @@ pub struct WrapProfileProvider<P> {
 }
 
 impl<P> WrapProfileProvider<P> {
+    /// Creates a new `WrapProfileProvider` from the given provider and profiles.
+    #[allow(dead_code)]
     pub fn new(provider: P, wrapping_key: impl Into<Profile>, profile: impl Into<Profile>) -> Self {
         Self {
             provider,

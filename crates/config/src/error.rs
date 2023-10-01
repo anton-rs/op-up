@@ -3,7 +3,7 @@ use figment::providers::{Format, Toml};
 use std::{collections::HashSet, error::Error, fmt};
 
 /// The message shown upon panic if the config could not be extracted from the figment
-pub const FAILED_TO_EXTRACT_CONFIG_PANIC_MSG: &str = "failed to extract config:";
+pub(crate) const FAILED_TO_EXTRACT_CONFIG_PANIC_MSG: &str = "failed to extract config:";
 
 /// Represents a failed attempt to extract `Config` from a `Figment`
 #[derive(Clone, Debug, PartialEq)]

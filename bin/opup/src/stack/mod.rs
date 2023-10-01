@@ -1,6 +1,5 @@
 use bollard::Docker;
 use eyre::Result;
-use inquire::Confirm;
 use std::path::Path;
 use std::process::Command;
 
@@ -47,7 +46,6 @@ pub fn temp() -> Result<()> {
     let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
     // Files referenced
-    let stack_file = op_up_dir.join(".stack");
     let genesis_l1_file = devnet_dir.join("genesis-l1.json");
     let genesis_l2_file = devnet_dir.join("genesis-l2.json");
     let genesis_rollup_file = devnet_dir.join("rollup.json");
@@ -59,7 +57,7 @@ pub fn temp() -> Result<()> {
     // (or load an existing one from the .stack file if it exists)
     tracing::info!(target: "opup", "Loading op-stack config...");
     let current_dir = std::env::current_dir()?;
-    let stack = op_config::Config::load_with_root(current_dir);
+    let stack = Config::load_with_root(current_dir);
 
     // Check if the optimism and optimism-rs paths exist in the project root dir.
     // If not, clone them from Github
