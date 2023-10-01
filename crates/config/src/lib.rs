@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-#![feature(generic_const_exprs)]
 #![warn(
     missing_debug_implementations,
     missing_docs,

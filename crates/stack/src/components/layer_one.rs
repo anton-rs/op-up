@@ -1,34 +1,42 @@
 use std::{fmt::Display, str::FromStr};
 
-use eyre::{bail, Report};
+use enum_variants_strings::EnumVariantsStrings;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
-pub const GETH: &str = "geth";
-pub const ERIGON: &str = "erigon";
-
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+/// L1 Client
+///
+/// The OP Stack L1 client is an L1 execution client.
+#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L1Client {
+    /// Geth
     Geth,
+    /// Erigon
     Erigon,
+    /// Reth
+    Reth,
 }
 
 impl FromStr for L1Client {
-    type Err = Report;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            GETH => Ok(L1Client::Geth),
-            ERIGON => Ok(L1Client::Erigon),
-            _ => bail!("Invalid L1 client: {}", s),
+        if s == L1Client::Geth.to_str() {
+            return Ok(L1Client::Geth);
         }
+        if s == L1Client::Erigon.to_str() {
+            return Ok(L1Client::Erigon);
+        }
+        if s == L1Client::Reth.to_str() {
+            return Ok(L1Client::Reth);
+        }
+        eyre::bail!("Invalid L1 client: {}", s)
     }
 }
 
 impl Display for L1Client {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            L1Client::Geth => write!(f, "{}", GETH),
-            L1Client::Erigon => write!(f, "{}", ERIGON),
-        }
+        write!(f, "{}", self.to_str())
     }
 }

@@ -1,35 +1,35 @@
 use std::{fmt::Display, str::FromStr};
 
-use eyre::{bail, Report};
+use enum_variants_strings::EnumVariantsStrings;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
-// Challenger agents
-pub const OP_CHALLENGER_GO: &str = "op-challenger-go";
-pub const OP_CHALLENGER_RUST: &str = "op-challenger-rust";
-
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+/// Challenger Agent Implementations
+#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum ChallengerAgent {
+    /// A Go implementation of the challenger agent
     OpChallengerGo,
+    /// A Rust implementation of the challenger agent
     OpChallengerRust,
 }
 
 impl FromStr for ChallengerAgent {
-    type Err = Report;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            OP_CHALLENGER_GO => Ok(ChallengerAgent::OpChallengerGo),
-            OP_CHALLENGER_RUST => Ok(ChallengerAgent::OpChallengerRust),
-            _ => bail!("Invalid challenger agent: {}", s),
+        if s == ChallengerAgent::OpChallengerGo.to_str() {
+            return Ok(ChallengerAgent::OpChallengerGo);
         }
+        if s == ChallengerAgent::OpChallengerRust.to_str() {
+            return Ok(ChallengerAgent::OpChallengerRust);
+        }
+        eyre::bail!("Invalid L2 client: {}", s)
     }
 }
 
 impl Display for ChallengerAgent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ChallengerAgent::OpChallengerGo => write!(f, "{}", OP_CHALLENGER_GO),
-            ChallengerAgent::OpChallengerRust => write!(f, "{}", OP_CHALLENGER_RUST),
-        }
+        write!(f, "{}", self.to_str())
     }
 }

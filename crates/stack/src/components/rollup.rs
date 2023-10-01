@@ -1,35 +1,38 @@
 use std::{fmt::Display, str::FromStr};
 
-use eyre::{bail, Report};
+use enum_variants_strings::EnumVariantsStrings;
 use serde::{Deserialize, Serialize};
+use strum::EnumIter;
 
-// Rollup clients
-pub const OP_NODE: &str = "op-node";
-pub const MAGI: &str = "magi";
-
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+/// Rollup Client
+///
+/// The OP Stack rollup client performs the derivation of the rollup state
+/// from the L1 and L2 clients.
+#[derive(Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum RollupClient {
+    /// OP Node
     OpNode,
+    /// Magi
     Magi,
 }
 
 impl FromStr for RollupClient {
-    type Err = Report;
+    type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            OP_NODE => Ok(RollupClient::OpNode),
-            MAGI => Ok(RollupClient::Magi),
-            _ => bail!("Invalid rollup client: {}", s),
+        if s == RollupClient::OpNode.to_str() {
+            return Ok(RollupClient::OpNode);
         }
+        if s == RollupClient::Magi.to_str() {
+            return Ok(RollupClient::Magi);
+        }
+        eyre::bail!("Invalid L2 client: {}", s)
     }
 }
 
 impl Display for RollupClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RollupClient::OpNode => write!(f, "{}", OP_NODE),
-            RollupClient::Magi => write!(f, "{}", MAGI),
-        }
+        write!(f, "{}", self.to_str())
     }
 }

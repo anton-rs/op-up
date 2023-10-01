@@ -1,5 +1,4 @@
 #![doc = include_str!("../README.md")]
-#![feature(generic_const_exprs)]
 #![warn(
     missing_debug_implementations,
     missing_docs,
@@ -9,7 +8,6 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use eyre::{eyre, Result};
 use std::{
     fmt::Display,
     fs::File,
@@ -17,19 +15,20 @@ use std::{
     path::PathBuf,
 };
 
+use eyre::{eyre, Result};
+use strum::IntoEnumIterator;
+
 /// Core components of the OP Stack
 pub mod components;
 pub use components::{
-    challenger::{ChallengerAgent, OP_CHALLENGER_GO, OP_CHALLENGER_RUST},
-    layer_one::{L1Client, ERIGON, GETH},
-    layer_two::{L2Client, OP_ERIGON, OP_GETH},
-    rollup::{RollupClient, MAGI, OP_NODE},
+    challenger::ChallengerAgent, layer_one::L1Client, layer_two::L2Client, rollup::RollupClient,
 };
 
 /// ## OP Stack Config
 ///
 /// Struct to hold the user's choices for the op-stack components
 /// that they want to use for their devnet
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpStackConfig {
     /// The L1 Client.
     pub l1_client: L1Client,
@@ -71,28 +70,28 @@ impl OpStackConfig {
         make_selection!(
             l1_client,
             "Which L1 execution client would you like to use?",
-            vec![GETH, ERIGON]
+            L1Client::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             l2_client,
             "Which L2 execution client would you like to use?",
-            vec![OP_GETH, OP_ERIGON]
+            L2Client::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             rollup_client,
             "Which rollup client would you like to use?",
-            vec![OP_NODE, MAGI]
+            RollupClient::iter().collect::<Vec<_>>()
         );
 
         make_selection!(
             challenger,
             "Which challenger agent would you like to use?",
-            vec![OP_CHALLENGER_GO, OP_CHALLENGER_RUST]
+            ChallengerAgent::iter().collect::<Vec<_>>()
         );
 
-        println!("\nNice choice! You've got great taste ✨");
+        tracing::debug!(target: "stack", "Nice choice! You've got great taste ✨");
 
         Ok(OpStackConfig {
             l1_client: l1_client.parse()?,
@@ -103,6 +102,7 @@ impl OpStackConfig {
     }
 }
 
+/// Read the op stack config to a file.
 pub fn read_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     let file = File::open(file)?;
     let reader = BufReader::new(file);
@@ -132,6 +132,7 @@ pub fn read_from_file(file: &PathBuf) -> Result<OpStackConfig> {
     })
 }
 
+/// Write the op stack config to a file
 pub fn write_to_file(file: &PathBuf, stack: &OpStackConfig) -> Result<()> {
     let file = File::create(file)?;
     let mut writer = BufWriter::new(file);
