@@ -1,11 +1,11 @@
 # op-up
 
-[![CI](https://github.com/merklefruit/op-up/actions/workflows/ci.yml/badge.svg)][gh-ci]
+[![CI](https://github.com/anton-rs/op-up/actions/workflows/ci.yml/badge.svg)][gh-ci]
 [![License](https://img.shields.io/badge/License-MIT-orange.svg)][mit-license]
 [![Chat][tg-badge]][tg-url]
 
 [mit-license]: https://opensource.org/license/mit/
-[gh-ci]: https://github.com/merklefruit/op-up/actions/workflows/ci.yml
+[gh-ci]: https://github.com/anton-rs/op-up/actions/workflows/ci.yml
 [tg-url]: https://t.me/+XR8_p3qjzoFiMjEx
 [tg-badge]: https://img.shields.io/badge/chat-telegram-blue
 
@@ -18,7 +18,7 @@
 | [Developer Docs](./docs/developers/developers.md)
 | [Crate Docs](https://crates.io/crates/opup)
 
-*The project is still work in progress, see the [disclaimer below](#status).*
+_The project is still work in progress, see the [disclaimer below](#status)._
 
 ## What is op-up?
 
@@ -49,12 +49,13 @@ in an interoperable way.
 For example, want to run a pure rust op-stack (almost)?
 
 You can use
+
 - [reth](https://github.com/paradigmxyz/reth) as an L1 execution node.
 - [op-reth](https://github.com/anton-rs/op-reth/) as an L2 node (interchangeable with [op-geth](https://github.com/ethereum-optimism/op-geth)).
 - [magi](https://github.com/a16z/magi) as the rollup node.
 
-*Notice, this does not include the proposer or batcher,
-as well as fault proof components.*
+_Notice, this does not include the proposer or batcher,
+as well as fault proof components._
 
 ## Usage
 
@@ -66,11 +67,10 @@ First, make sure you have a few things installed.
 - [Make](https://www.gnu.org/software/make/)
 - [jq](https://jqlang.github.io/jq/)
 
-
 To get started with the interactive prompt, run the following commands:
 
 ```sh
-git clone git@github.com:merklefruit/op-up.git && cd op-up
+git clone git@github.com:anton-rs/op-up.git && cd op-up
 make devnet
 ```
 
@@ -106,7 +106,7 @@ make nuke
 By building with Rust's [crate system](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html),
 `op-up` can easily be used as a library in an extensible way.
 
-## Status https://github.com/merklefruit/op-up/labels/alpha
+## Status https://github.com/anton-rs/op-up/labels/alpha
 
 `op-up` is **not ready for production use**.
 
@@ -122,11 +122,11 @@ importantly, have fun!
 
 Please check if your issue is covered in the [troubleshooting docs](./docs/developers/troubleshooting.md).
 
-If not, [open an issue](https://github.com/merklefruit/op-up/issues/new) with all possible relevant details.
+If not, [open an issue](https://github.com/anton-rs/op-up/issues/new) with all possible relevant details.
 
 ## Contributions & Bug Reports
 
-Please report any bugs or issues you encounter by [opening a github issue](https://github.com/merklefruit/op-up/issues/new).
+Please report any bugs or issues you encounter by [opening a github issue](https://github.com/anton-rs/op-up/issues/new).
 
 All contributions are welcome, but if you are at all unsure, visit the [developer docs](./docs/developers/contributing.md).
 
@@ -134,4 +134,4 @@ All contributions are welcome, but if you are at all unsure, visit the [develope
 
 This project is licensed under the [MIT License](LICENSE). Free and open-source, forever.
 
-*All our rust are belong to you.*
+_All our rust are belong to you._
