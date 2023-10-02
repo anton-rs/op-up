@@ -78,7 +78,7 @@ pub fn temp() -> Result<()> {
     // Setup
 
     tracing::info!(target: "opup", "Building devnet...");
-    std::fs::create_dir_all(devnet_dir)?;
+    stack.create_artifacts_dir()?;
     let curr_timestamp = clock::current_timestamp();
     let genesis_template = genesis::genesis_template(curr_timestamp);
 

@@ -89,6 +89,9 @@ pub struct Config {
     #[serde(skip)]
     pub profile: Profile,
 
+    /// The path to the op stack artifact directory. **(default: _default_ `.stack`)**
+    pub artifacts: PathBuf,
+
     /// The type of L1 Client to use. **(default: _default_ `L1Client::Geth`)**
     pub l1_client: L1Client,
     /// The type of L2 Client to use. **(default: _default_ `L2Client::Geth`)**
@@ -102,7 +105,7 @@ pub struct Config {
     /// Enable Sequencing. **(default: _default_ `false`)**
     pub enable_sequencing: bool,
     /// Enable Fault Proofs. **(default: _default_ `false`)**
-    pub enable_frault_proofs: bool,
+    pub enable_fault_proofs: bool,
 
     /// JWT secret that should be used for any rpc calls
     pub eth_rpc_jwt: Option<String>,
@@ -265,6 +268,14 @@ impl Config {
             __root: root::RootPath(root.into()),
             ..Config::default()
         }
+    }
+
+    /// Creates the artifacts directory if it doesn't exist.
+    pub fn create_artifacts_dir(&self) -> Result<()> {
+        if !self.artifacts.exists() {
+            std::fs::create_dir_all(&self.artifacts)?;
+        }
+        Ok(())
     }
 
     /// Returns the selected profile
@@ -430,12 +441,13 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             profile: Self::DEFAULT_PROFILE,
+            artifacts: PathBuf::from(Self::STACK_DIR_NAME),
             l1_client: L1Client::default(),
             l2_client: L2Client::default(),
             rollup_client: RollupClient::default(),
             challenger: ChallengerAgent::default(),
             enable_sequencing: false,
-            enable_frault_proofs: false,
+            enable_fault_proofs: false,
             eth_rpc_jwt: None,
             __root: RootPath::default(),
         }
