@@ -1,6 +1,6 @@
 [package]
-name = "op-stack"
-description = "OP Stack primitives and core types"
+name = "op-contracts"
+description = "OP Stack contract management"
 
 version.workspace = true
 edition.workspace = true
