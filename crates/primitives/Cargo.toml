@@ -1,5 +1,5 @@
 [package]
-name = "op-stack"
+name = "op-primitives"
 description = "OP Stack primitives and core types"
 
 version.workspace = true
@@ -19,7 +19,6 @@ enum-variants-strings.workspace = true
 
 eyre.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 
 ethers-core.workspace = true
 

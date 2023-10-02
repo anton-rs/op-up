@@ -5,7 +5,7 @@ use std::process::Command;
 
 use op_config::Config;
 use op_contracts::AddressManager;
-use op_stack::genesis;
+use op_primitives::genesis;
 
 use crate::{
     constants,

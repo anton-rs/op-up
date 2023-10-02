@@ -9,7 +9,7 @@ license.workspace = true
 
 [dependencies]
 op-config = { path = "../../crates/config" }
-op-stack = { path = "../../crates/stack" }
+op-primitives = { path = "../../crates/primitives" }
 op-contracts = { path = "../../crates/contracts" }
 
 serde.workspace = true

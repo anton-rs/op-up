@@ -39,9 +39,7 @@ pub use optional::OptionalStrictProfileProvider;
 mod unwraps;
 pub use unwraps::UnwrapProfileProvider;
 
-use op_stack::components::{
-    challenger::ChallengerAgent, layer_one::L1Client, layer_two::L2Client, rollup::RollupClient,
-};
+use op_primitives::{ChallengerAgent, L1Client, L2Client, RollupClient};
 
 /// RootPath convenience re-export
 mod root;

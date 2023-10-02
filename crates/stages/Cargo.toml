@@ -1,0 +1,18 @@
+[package]
+name = "op-stages"
+description = "Composable Rollup Stages"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+op-primitives = { path = "../primitives" }
+
+eyre.workspace = true
+tracing.workspace = true
+
