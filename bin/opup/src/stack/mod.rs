@@ -5,6 +5,7 @@ use std::process::Command;
 
 use crate::genesis;
 use op_config::Config;
+use op_stack::genesis;
 
 use crate::{
     addresses, constants,
@@ -74,7 +75,8 @@ pub fn temp() -> Result<()> {
     tracing::info!(target: "opup", "Building devnet...");
     stack.create_artifacts_dir()?;
     let curr_timestamp = clock::current_timestamp();
-    let genesis_template = genesis::genesis_template(curr_timestamp);
+    let genesis_template = genesis::genesis_template_string(curr_timestamp)
+        .ok_or_else(|| eyre::eyre!("Could not create genesis template"))?;
 
     // Step 1.
     // Create L1 genesis
