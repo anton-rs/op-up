@@ -1383,7 +1383,12 @@ name = "op-stages"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "op-config",
+ "op-contracts",
  "op-primitives",
+ "project-root",
+ "serde",
+ "serde_json",
  "tracing",
 ]
 
@@ -1425,7 +1430,7 @@ dependencies = [
  "op-config",
  "op-contracts",
  "op-primitives",
- "project-root",
+ "op-stages",
  "serde",
  "serde_json",
  "tokio",

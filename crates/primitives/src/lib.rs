@@ -11,6 +11,9 @@
 /// Genesis templates.
 pub mod genesis;
 
+/// Optimism Monorepo utilities.
+pub mod monorepo;
+
 /// Core components of the OP Stack
 pub mod components;
 pub use components::{
