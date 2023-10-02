@@ -3,6 +3,7 @@ use eyre::Result;
 use std::path::Path;
 use std::process::Command;
 
+use crate::genesis;
 use op_config::Config;
 
 use crate::{
@@ -12,7 +13,6 @@ use crate::{
         commands::{self, check_command},
         git, json, net, runner,
     },
-    genesis,
 };
 
 /// Spin up the stack.
@@ -43,7 +43,6 @@ pub fn temp() -> Result<()> {
     let contracts_bedrock_dir = op_monorepo_dir.join("packages/contracts-bedrock");
     let deploy_config_dir = contracts_bedrock_dir.join("deploy-config");
     let deployment_dir = contracts_bedrock_dir.join("deployments/devnetL1");
-    let op_rs_monorepo_dir = op_up_dir.join("optimism-rs");
 
     // Files referenced
     let genesis_l1_file = devnet_dir.join("genesis-l1.json");
@@ -64,11 +63,6 @@ pub fn temp() -> Result<()> {
     if !Path::new(&op_monorepo_dir).exists() {
         tracing::info!(target: "opup", "Cloning the optimism monorepo from github (this may take a while)...");
         git::git_clone(op_up_dir, constants::OP_MONOREPO_URL)?;
-    }
-    // There is no more optimism-rs monorepo :{
-    if !Path::new(&op_rs_monorepo_dir).exists() {
-        tracing::info!(target: "opup", "Cloning the optimism-rs monorepo from github (this may take a while)...");
-        // git::git_clone(op_up_dir, constants::OP_RS_MONOREPO_URL)?;
     }
 
     // ----------------------------------------
