@@ -4,6 +4,7 @@ use std::path::Path;
 use std::process::Command;
 
 use op_config::Config;
+use op_stack::genesis;
 
 use crate::{
     addresses, constants,
@@ -12,7 +13,6 @@ use crate::{
         commands::{self, check_command},
         git, json, net, runner,
     },
-    genesis,
 };
 
 /// Spin up the stack.
@@ -80,7 +80,8 @@ pub fn temp() -> Result<()> {
     tracing::info!(target: "opup", "Building devnet...");
     std::fs::create_dir_all(devnet_dir)?;
     let curr_timestamp = clock::current_timestamp();
-    let genesis_template = genesis::genesis_template(curr_timestamp);
+    let genesis_template = genesis::genesis_template_string(curr_timestamp)
+        .ok_or_else(|| eyre::eyre!("Could not create genesis template"))?;
 
     // Step 1.
     // Create L1 genesis

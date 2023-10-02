@@ -15,6 +15,3 @@ pub mod addresses;
 
 /// Command banners.
 pub mod banners;
-
-/// Genesis configuration.
-pub mod genesis;
