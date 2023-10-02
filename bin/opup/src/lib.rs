@@ -10,8 +10,5 @@ pub mod etc;
 /// System-level constants.
 pub mod constants;
 
-/// Deployment addresses.
-pub mod addresses;
-
 /// Command banners.
 pub mod banners;

@@ -3,12 +3,12 @@ use eyre::Result;
 use std::path::Path;
 use std::process::Command;
 
-use crate::genesis;
 use op_config::Config;
+use op_contracts::AddressManager;
 use op_stack::genesis;
 
 use crate::{
-    addresses, constants,
+    constants,
     etc::{
         clock,
         commands::{self, check_command},
@@ -143,7 +143,7 @@ pub fn temp() -> Result<()> {
         check_command(deploy_contracts, "Failed to deploy contracts")?;
 
         // Write the addresses to json
-        let (addresses, sdk_addresses) = addresses::set_addresses(&deployment_dir)?;
+        let (addresses, sdk_addresses) = AddressManager::set_addresses(&deployment_dir)?;
         json::write_json(&addresses_json_file, &addresses)?;
         json::write_json(&addresses_sdk_json_file, &sdk_addresses)?;
 
