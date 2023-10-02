@@ -46,7 +46,7 @@ already spent an enormous amount of effort and time building out the
 for how [OP Stack](https://stack.optimism.io/) components work together
 in an interoperable way.
 
-For example, want to run a pure rust op-stack (almost)?
+For example, want to run a pure rust op-stack?
 
 You can use
 
@@ -71,7 +71,7 @@ To get started with the interactive prompt, run the following commands:
 
 ```sh
 git clone git@github.com:anton-rs/op-up.git && cd op-up
-make devnet
+cargo run
 ```
 
 This will bring up a local devnet using the default components.
@@ -92,13 +92,13 @@ The faucet account exists on both L1 and L2.
 To stop the devnet, run:
 
 ```sh
-make devnet-stop
+cargo run -- stop
 ```
 
 To reset the devnet state, run:
 
 ```sh
-make nuke
+cargo run -- nuke
 ```
 
 ## Using `op-up` as a library

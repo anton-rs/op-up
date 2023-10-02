@@ -1,5 +1,5 @@
 use op_config::Config;
-use op_stack::{ChallengerAgent, L1Client, L2Client, RollupClient};
+use op_primitives::{ChallengerAgent, L1Client, L2Client, RollupClient};
 use std::path::PathBuf;
 
 #[test]
