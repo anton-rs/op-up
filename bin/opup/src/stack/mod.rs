@@ -10,7 +10,6 @@ use op_primitives::genesis;
 use crate::{
     constants,
     etc::{
-        clock,
         commands::{self, check_command},
         git, json, net, runner,
     },
@@ -74,7 +73,7 @@ pub fn temp() -> Result<()> {
 
     tracing::info!(target: "opup", "Building devnet...");
     stack.create_artifacts_dir()?;
-    let curr_timestamp = clock::current_timestamp();
+    let curr_timestamp = genesis::current_timestamp();
     let genesis_template = genesis::genesis_template_string(curr_timestamp)
         .ok_or_else(|| eyre::eyre!("Could not create genesis template"))?;
 

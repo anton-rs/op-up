@@ -12,3 +12,6 @@ pub mod constants;
 
 /// Command banners.
 pub mod banners;
+
+/// Telemetry contains helpers for initializing telemetry.
+pub mod telemetry;

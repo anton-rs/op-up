@@ -5,6 +5,7 @@ use ethers_core::{
 use hex_literal::hex;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Genesis dev accounts.
 pub static GENESIS_DEV_ACCOUNTS: Lazy<Vec<H160>> = Lazy::new(|| {
@@ -104,6 +105,14 @@ pub fn genesis_template(timestamp: u64) -> Option<Genesis> {
         genesis.alloc = genesis_allocations;
         genesis
     })
+}
+
+/// Returns the current timestamp in seconds.
+pub fn current_timestamp() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
 
 /// Returns the genesis template as a string for the given timestamp.
