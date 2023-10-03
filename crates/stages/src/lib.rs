@@ -104,6 +104,9 @@ impl Stages {
         // Create L1 genesis
         if !genesis_l1_file.exists() {
             tracing::info!(target: "opup", "Creating L1 genesis...");
+            if let Some(parent_dir) = genesis_l1_file.parent() {
+                std::fs::create_dir_all(parent_dir)?;
+            }
             std::fs::write(genesis_l1_file, genesis_template)?;
         } else {
             tracing::info!(target: "opup", "L1 genesis already found.");
