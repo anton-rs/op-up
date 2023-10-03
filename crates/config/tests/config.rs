@@ -49,6 +49,9 @@ fn test_read_config_from_toml() {
     assert_eq!(config.challenger, ChallengerAgent::OpChallengerGo);
     assert_eq!(config.enable_sequencing, true);
     assert_eq!(config.enable_fault_proofs, true);
+
+    // Drop the `tmpdir` variable, which deletes the temporary directory.
+    drop(tmpdir);
 }
 
 #[test]
