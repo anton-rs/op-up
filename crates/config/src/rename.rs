@@ -4,7 +4,7 @@ use figment::{
     Error, Metadata, Profile, Provider,
 };
 
-/// Renames a profile from `from` to `to
+/// Renames a profile from `from` to `to`
 ///
 /// For example given:
 ///
