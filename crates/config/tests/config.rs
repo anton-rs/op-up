@@ -38,18 +38,10 @@ fn test_read_config_from_toml() {
         "#,
     )
     .unwrap();
-
-    // Verify the toml file exists.
     assert!(PathBuf::from("stack.toml").exists());
-
-    // Read the toml file.
-    let toml_content = std::fs::read_to_string("stack.toml").unwrap();
-    println!("{}", toml_content);
 
     // Create a config from the toml file.
     let config = Config::from_toml("stack.toml").unwrap();
-    println!("{:?}", config);
-
     assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
     assert_eq!(config.l1_client, L1Client::Reth);
     assert_eq!(config.l2_client, L2Client::OpReth);
