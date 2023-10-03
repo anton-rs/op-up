@@ -18,22 +18,22 @@ pub use stage::*;
 
 /// Convenience [figment::Error] wrapper.
 /// Uses a custom [OpStackConfigError] under the hood.
-pub(crate) mod error;
+pub mod error;
 
 /// Holds a [figment::Provider] that is used to retrieve a toml file.
-pub(crate) mod toml;
+pub mod toml;
 
 /// Renames the [figment::Provider] `from` key to `to`.
-pub(crate) mod rename;
+pub mod rename;
 
 /// Wraps a profile increasing the key depth.
-pub(crate) mod wraps;
+pub mod wraps;
 
 /// Extends a [figment::Provider] by warning about deprecated profile key usage.
-pub(crate) mod optional;
+pub mod optional;
 
 /// Unwraps a profile reducing the key depth.
-pub(crate) mod unwraps;
+pub mod unwraps;
 
 /// A wrapper for the root path used during toml config detection.
 pub mod root;

@@ -1,6 +1,6 @@
 use eyre::Result;
 use figment::{
-    providers::{Env, Format, Serialized, Toml},
+    providers::{Env, Serialized},
     value::{Dict, Map, Value},
     Figment, Metadata, Profile, Provider,
 };
@@ -13,12 +13,11 @@ use strum::IntoEnumIterator;
 
 use op_primitives::{ChallengerAgent, L1Client, L2Client, RollupClient};
 
-use crate::error::{ExtractConfigError, OpStackConfigError};
+use crate::error::ExtractConfigError;
 use crate::optional::OptionalStrictProfileProvider;
 use crate::rename::RenameProfileProvider;
 use crate::root::RootPath;
 use crate::toml::TomlFileProvider;
-use crate::unwraps::UnwrapProfileProvider;
 use crate::wraps::WrapProfileProvider;
 
 /// OP Stack Configuration
