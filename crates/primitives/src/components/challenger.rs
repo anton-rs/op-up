@@ -6,6 +6,7 @@ use strum::EnumIter;
 
 /// Challenger Agent Implementations
 #[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum ChallengerAgent {
     /// A Go implementation of the challenger agent
@@ -44,6 +45,18 @@ impl Display for ChallengerAgent {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_deserialize_string() {
+        assert_eq!(
+            serde_json::from_str::<ChallengerAgent>(r#""op-challenger-go""#).unwrap(),
+            ChallengerAgent::OpChallengerGo
+        );
+        assert_eq!(
+            serde_json::from_str::<ChallengerAgent>(r#""op-challenger-rust""#).unwrap(),
+            ChallengerAgent::OpChallengerRust
+        );
+    }
 
     #[test]
     fn test_debug_string() {

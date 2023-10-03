@@ -10,6 +10,7 @@ use strum::EnumIter;
 /// that supports deposit transactions as well as a few other small OP-specific
 /// changes.
 #[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L2Client {
     /// OP Geth
@@ -53,6 +54,23 @@ impl Display for L2Client {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_deserialize() {
+        assert_eq!(
+            serde_json::from_str::<L2Client>("\"op-geth\"").unwrap(),
+            L2Client::OpGeth
+        );
+        assert_eq!(
+            serde_json::from_str::<L2Client>("\"op-erigon\"").unwrap(),
+            L2Client::OpErigon
+        );
+        assert_eq!(
+            serde_json::from_str::<L2Client>("\"op-reth\"").unwrap(),
+            L2Client::OpReth
+        );
+        assert!(serde_json::from_str::<L2Client>("\"invalid\"").is_err());
+    }
 
     #[test]
     fn test_debug_string() {

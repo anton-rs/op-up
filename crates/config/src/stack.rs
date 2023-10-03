@@ -52,6 +52,7 @@ use crate::wraps::WrapProfileProvider;
 ///
 /// Note that these behaviors differ from those of [`Config::figment()`].
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Config {
     /// The selected profile. **(default: _default_ `default`)**
     ///

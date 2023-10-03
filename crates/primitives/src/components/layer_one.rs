@@ -8,6 +8,7 @@ use strum::EnumIter;
 ///
 /// The OP Stack L1 client is an L1 execution client.
 #[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L1Client {
     /// Geth
@@ -51,6 +52,23 @@ impl Display for L1Client {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_deserialize_string() {
+        assert_eq!(
+            serde_json::from_str::<L1Client>(r#""geth""#).unwrap(),
+            L1Client::Geth
+        );
+        assert_eq!(
+            serde_json::from_str::<L1Client>(r#""erigon""#).unwrap(),
+            L1Client::Erigon
+        );
+        assert_eq!(
+            serde_json::from_str::<L1Client>(r#""reth""#).unwrap(),
+            L1Client::Reth
+        );
+        assert!(serde_json::from_str::<L1Client>(r#""invalid""#).is_err());
+    }
 
     #[test]
     fn test_debug_string() {

@@ -9,6 +9,7 @@ use strum::EnumIter;
 /// The OP Stack rollup client performs the derivation of the rollup state
 /// from the L1 and L2 clients.
 #[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum RollupClient {
     /// OP Node
@@ -47,6 +48,18 @@ impl Display for RollupClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_deserialize_string() {
+        assert_eq!(
+            serde_json::from_str::<RollupClient>(r#""op-node""#).unwrap(),
+            RollupClient::OpNode
+        );
+        assert_eq!(
+            serde_json::from_str::<RollupClient>(r#""magi""#).unwrap(),
+            RollupClient::Magi
+        );
+    }
 
     #[test]
     fn test_debug_string() {
