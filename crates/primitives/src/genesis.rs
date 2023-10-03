@@ -98,6 +98,7 @@ pub fn dev_accounts() -> GenesisAlloc {
 pub fn genesis_template(timestamp: u64) -> Option<Genesis> {
     let mut genesis_allocations = genesis_allocations();
     genesis_allocations.extend(dev_accounts());
+    Lazy::<Genesis>::force(&GENESIS_TEMPLATE);
     let genesis = Lazy::get(&GENESIS_TEMPLATE);
     genesis.map(|genesis| {
         let mut genesis = genesis.clone();
