@@ -18,6 +18,40 @@ fn test_default_config() {
 }
 
 #[test]
+fn test_read_config_from_toml() {
+    // Create a temporary directory and set it as the current working directory.
+    // This directory will be deleted when the `tmpdir` variable goes out of scope.
+    let tmpdir = tempfile::tempdir().unwrap();
+    std::env::set_current_dir(&tmpdir).unwrap();
+
+    // Write a toml config to the temporary directory.
+    std::fs::write(
+        "stack.toml",
+        r#"
+        [default]
+        l1-client = 'reth'
+        l2-client = 'op-reth'
+        rollup = 'magi'
+        challenger = 'op-challenger-go'
+        enable-sequencing = true
+        enable-fault-proofs = true
+    "#,
+    )
+    .unwrap();
+
+    // Create a config from the toml file.
+    let config = Config::from_toml("stack.toml").unwrap();
+
+    assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
+    assert_eq!(config.l1_client, L1Client::Reth);
+    assert_eq!(config.l2_client, L2Client::OpReth);
+    assert_eq!(config.rollup_client, RollupClient::Magi);
+    assert_eq!(config.challenger, ChallengerAgent::OpChallengerGo);
+    assert_eq!(config.enable_sequencing, true);
+    assert_eq!(config.enable_fault_proofs, true);
+}
+
+#[test]
 fn test_create_artifacts_dir() {
     // Create a temporary directory and set it as the current working directory.
     // This directory will be deleted when the `tmpdir` variable goes out of scope.

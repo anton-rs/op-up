@@ -1,4 +1,4 @@
-use std::{fmt::Display, str::FromStr};
+use std::fmt::Display;
 
 use enum_variants_strings::EnumVariantsStrings;
 use serde::{Deserialize, Serialize};
@@ -7,9 +7,7 @@ use strum::EnumIter;
 /// L1 Client
 ///
 /// The OP Stack L1 client is an L1 execution client.
-#[derive(
-    Default, Debug, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
-)]
+#[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L1Client {
     /// Geth
@@ -21,7 +19,13 @@ pub enum L1Client {
     Reth,
 }
 
-impl FromStr for L1Client {
+impl std::fmt::Debug for L1Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_str())
+    }
+}
+
+impl std::str::FromStr for L1Client {
     type Err = eyre::Report;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -41,5 +45,32 @@ impl FromStr for L1Client {
 impl Display for L1Client {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.to_str())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_debug_string() {
+        assert_eq!(format!("{:?}", L1Client::Geth), "geth");
+        assert_eq!(format!("{:?}", L1Client::Erigon), "erigon");
+        assert_eq!(format!("{:?}", L1Client::Reth), "reth");
+    }
+
+    #[test]
+    fn test_l1_client_from_str() {
+        assert_eq!("geth".parse::<L1Client>().unwrap(), L1Client::Geth);
+        assert_eq!("erigon".parse::<L1Client>().unwrap(), L1Client::Erigon);
+        assert_eq!("reth".parse::<L1Client>().unwrap(), L1Client::Reth);
+        assert!("invalid".parse::<L1Client>().is_err());
+    }
+
+    #[test]
+    fn test_l1_client_to_str() {
+        assert_eq!(L1Client::Geth.to_str(), "geth");
+        assert_eq!(L1Client::Erigon.to_str(), "erigon");
+        assert_eq!(L1Client::Reth.to_str(), "reth");
     }
 }
