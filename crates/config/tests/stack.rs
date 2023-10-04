@@ -56,7 +56,7 @@ fn test_read_config_with_components() {
     .unwrap();
     assert!(PathBuf::from("stack.toml").exists());
 
-    let config = Config::from_toml("stack.toml").unwrap();
+    let _config = Config::from_toml("stack.toml").unwrap();
 }
 
 #[test]

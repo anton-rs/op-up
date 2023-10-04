@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::marker::PhantomData;
 use std::path::PathBuf;
 
 use eyre::Result;
@@ -15,11 +16,10 @@ use op_primitives::{ChallengerAgent, L1Client, L2Client, RollupClient};
 
 use crate::providers::{
     error::ExtractConfigError, optional::OptionalStrictProfileProvider,
-    rename::RenameProfileProvider, toml::TomlFileProvider, unwraps::UnwrapProfileProvider,
-    wraps::WrapProfileProvider,
+    rename::RenameProfileProvider, toml::TomlFileProvider, wraps::WrapProfileProvider,
 };
 use crate::root::RootPath;
-use crate::stages::StageProvider;
+// use crate::stages::StageProvider;
 
 /// OP Stack Configuration
 ///
@@ -52,9 +52,13 @@ use crate::stages::StageProvider;
 ///     the "default" meta-profile.
 ///
 /// Note that these behaviors differ from those of [`Config::figment()`].
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config<'a> {
+    /// Phantom data to ensure that the lifetime `'a` is used.
+    #[serde(skip)]
+    _phantom: std::marker::PhantomData<&'a ()>,
+
     /// The selected profile. **(default: _default_ `default`)**
     ///
     /// **Note:** This field is never serialized nor deserialized. When a
@@ -91,7 +95,7 @@ pub struct Config<'a> {
     /// The parsing of [StageConfig]s is done by the [StageConfig::from_toml]
     /// function. This allows for different configuration formats to be used
     /// for each stage.
-    pub stages: Vec<StageProvider<'a>>,
+    // pub stages: Vec<StageProvider<'a>>,
 
     /// JWT secret that should be used for any rpc calls
     pub eth_rpc_jwt: Option<String>,
@@ -105,13 +109,13 @@ pub struct Config<'a> {
     pub __root: RootPath,
 }
 
-impl<'a> Deserialize<'a> for Config<'a> {
-    fn deserialize<D: serde::Deserializer<'a>>(deserializer: D) -> Result<Self, D::Error> {
-        let mut config: Config<'a> = serde::Deserialize::deserialize(deserializer)?;
-        // config.__root = RootPath::detect()?;
-        Ok(config)
-    }
-}
+// impl<'a> Deserialize<'a> for Config<'a> {
+//     fn deserialize<D: serde::Deserializer<'a>>(deserializer: D) -> Result<Self, D::Error> {
+//         let mut config: Config<'a> = serde::Deserialize::deserialize(deserializer)?;
+//         config.__root = RootPath::default();
+//         Ok(config)
+//     }
+// }
 
 impl Display for Config<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -441,6 +445,7 @@ impl From<Config<'_>> for Figment {
 impl Default for Config<'_> {
     fn default() -> Self {
         Self {
+            _phantom: PhantomData,
             profile: Self::DEFAULT_PROFILE,
             artifacts: PathBuf::from(Self::STACK_DIR_NAME),
             l1_client: L1Client::default(),
@@ -449,7 +454,7 @@ impl Default for Config<'_> {
             challenger: ChallengerAgent::default(),
             enable_sequencing: false,
             enable_fault_proofs: false,
-            stages: vec![],
+            // stages: vec![],
             eth_rpc_jwt: None,
             __root: RootPath::default(),
         }

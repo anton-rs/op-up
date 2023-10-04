@@ -1,11 +1,14 @@
+#![allow(unconditional_recursion)]
 use serde::{ser::SerializeStruct, Deserialize, Serialize};
 
+/// The stage config.
 pub mod config;
 use config::StageConfig;
 
 /// StageProvider
 #[derive(Debug, Clone)]
 pub struct StageProvider<'a> {
+    /// The internal Stage.
     pub inner: Option<&'a dyn Stage>,
 }
 
@@ -21,8 +24,8 @@ impl<'a> Serialize for StageProvider<'a> {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("StageProvider", 1)?;
-        state.serialize_field("inner", &None::<Option<_>>)?;
+        let state = serializer.serialize_struct("StageProvider", 1)?;
+        // state.serialize_field("inner", &None::<Option<_>>)?;
         state.end()
     }
 }
