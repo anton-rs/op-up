@@ -36,3 +36,4 @@ dirs-next = "2"
 pretty_assertions = "1"
 figment = { version = "0.10", features = ["test"] }
 tempfile = "3"
+temp_testdir = "0.2.3"
