@@ -26,6 +26,7 @@ tracing.workspace = true
 hex-literal.workspace = true
 once_cell.workspace = true
 
+typetag = "0.2.13"
 Inflector = "0.11.4"
 figment = { version = "0.10", features = ["toml", "env"] }
 toml = { version = "0.8.1", features = ["preserve_order"] }

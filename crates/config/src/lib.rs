@@ -8,33 +8,29 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-/// OP Stack [Config].
+/// Stack Configuration
+///
+/// The [stack] module contains the core [Config] struct which is
+/// responsible for holding the configuration of the OP stack.
+///
+/// ## Example
+///
+/// ```rust
+/// use std::path::PathBuf;
+/// use op_config::Config;
+/// use op_config::stack::StackConfig;
+///
+/// let config = Config::default();
+/// assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
+/// ```
 pub mod stack;
 pub use stack::*;
 
 /// [StageConfig] is a [figment::Provider] that holds the [Stage] configuration.
-pub mod stage;
-pub use stage::*;
+pub mod stages;
 
-/// Convenience [figment::Error] wrapper.
-/// Uses a custom [OpStackConfigError] under the hood.
-pub mod error;
-
-/// Holds a [figment::Provider] that is used to retrieve a toml file.
-pub mod toml;
-
-/// Renames the [figment::Provider] `from` key to `to`.
-pub mod rename;
-
-/// Wraps a profile increasing the key depth.
-pub mod wraps;
-
-/// Extends a [figment::Provider] by warning about deprecated profile key usage.
-pub mod optional;
-
-/// Unwraps a profile reducing the key depth.
-pub mod unwraps;
+/// Providers are [figment::Provider]s used to retrieve configuration.
+pub mod providers;
 
 /// A wrapper for the root path used during toml config detection.
 pub mod root;
-pub use root::*;

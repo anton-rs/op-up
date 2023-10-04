@@ -4,7 +4,7 @@ use figment::{
     Error, Figment, Metadata, Profile, Provider,
 };
 
-use crate::unwraps::UnwrapProfileProvider;
+use super::unwraps::UnwrapProfileProvider;
 
 /// Extracts the profile from the `profile` key and using the original key as backup, merging
 /// values where necessary

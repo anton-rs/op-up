@@ -19,6 +19,47 @@ fn test_default_config() {
 }
 
 #[test]
+fn test_read_config_with_components() {
+    let tempdir = TempDir::default().permanent();
+    std::env::set_current_dir(&tempdir).unwrap();
+
+    std::fs::write(
+        "stack.toml",
+        r#"
+        [default]
+        l1-client = 'reth'
+        l2-client = 'op-reth'
+        rollup-client = 'magi'
+        challenger = 'op-challenger-go'
+
+        [[components]]
+        type = 'l1-client'
+        name = 'reth'
+        enable = true
+
+        [[components]]
+        type = 'l2-client'
+        name = 'op-reth'
+        enable = true
+
+        [[components]]
+        type = 'rollup-client'
+        name = 'sequencer'
+        enable = false
+
+        [[components]]
+        type = 'rollup-client'
+        name = 'magi'
+        enable = true
+        "#,
+    )
+    .unwrap();
+    assert!(PathBuf::from("stack.toml").exists());
+
+    let config = Config::from_toml("stack.toml").unwrap();
+}
+
+#[test]
 fn test_read_config_from_toml() {
     let tempdir = TempDir::default().permanent();
     std::env::set_current_dir(&tempdir).unwrap();
