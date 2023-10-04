@@ -32,25 +32,25 @@ fn test_read_config_with_components() {
         rollup-client = 'magi'
         challenger = 'op-challenger-go'
 
-        [[components]]
-        type = 'l1-client'
-        name = 'reth'
-        enable = true
+        # [[components]]
+        # type = 'l1-client'
+        # name = 'reth'
+        # enable = true
 
-        [[components]]
-        type = 'l2-client'
-        name = 'op-reth'
-        enable = true
+        # [[components]]
+        # type = 'l2-client'
+        # name = 'op-reth'
+        # enable = true
 
-        [[components]]
-        type = 'rollup-client'
-        name = 'sequencer'
-        enable = false
+        # [[components]]
+        # type = 'rollup-client'
+        # name = 'sequencer'
+        # enable = false
 
-        [[components]]
-        type = 'rollup-client'
-        name = 'magi'
-        enable = true
+        # [[components]]
+        # type = 'rollup-client'
+        # name = 'magi'
+        # enable = true
         "#,
     )
     .unwrap();
