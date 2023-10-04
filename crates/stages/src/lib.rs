@@ -51,12 +51,12 @@ pub const DEPLOYER_PRIVATE_KEY: &str =
 ///
 /// This module contains the code for the stages of the stack.
 #[derive(Debug, Clone)]
-pub struct Stages {
+pub struct Stages<'a> {
     /// The stack config.
-    pub config: Config,
+    pub config: Config<'a>,
 }
 
-impl Stages {
+impl Stages<'_> {
     /// Execute the stages of the stack.
     pub async fn execute(&self) -> eyre::Result<()> {
         tracing::debug!(target: "opup", "bootstrapping op stack");
@@ -295,8 +295,8 @@ impl Stages {
     }
 }
 
-impl From<Config> for Stages {
-    fn from(config: Config) -> Self {
+impl<'a> From<Config<'a>> for Stages<'a> {
+    fn from(config: Config<'a>) -> Self {
         Self { config }
     }
 }

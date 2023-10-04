@@ -52,12 +52,9 @@ use crate::stages::StageProvider;
 ///     the "default" meta-profile.
 ///
 /// Note that these behaviors differ from those of [`Config::figment()`].
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Config<S>
-where
-    S: StageProvider,
-{
+pub struct Config<'a> {
     /// The selected profile. **(default: _default_ `default`)**
     ///
     /// **Note:** This field is never serialized nor deserialized. When a
@@ -94,7 +91,7 @@ where
     /// The parsing of [StageConfig]s is done by the [StageConfig::from_toml]
     /// function. This allows for different configuration formats to be used
     /// for each stage.
-    pub stages: Vec<S>,
+    pub stages: Vec<StageProvider<'a>>,
 
     /// JWT secret that should be used for any rpc calls
     pub eth_rpc_jwt: Option<String>,
@@ -108,10 +105,15 @@ where
     pub __root: RootPath,
 }
 
-impl<S> Display for Config<S>
-where
-    S: StageProvider,
-{
+impl<'a> Deserialize<'a> for Config<'a> {
+    fn deserialize<D: serde::Deserializer<'a>>(deserializer: D) -> Result<Self, D::Error> {
+        let mut config: Config<'a> = serde::Deserialize::deserialize(deserializer)?;
+        // config.__root = RootPath::detect()?;
+        Ok(config)
+    }
+}
+
+impl Display for Config<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
@@ -128,10 +130,7 @@ macro_rules! make_selection {
     };
 }
 
-impl<S> Config<S>
-where
-    S: StageProvider,
-{
+impl Config<'_> {
     /// The default profile: "default"
     pub const DEFAULT_PROFILE: Profile = Profile::const_new("default");
 
@@ -152,7 +151,7 @@ where
     /// See `Config::figment`
     #[track_caller]
     pub fn load() -> Self {
-        Config::<S>::from_provider(Config::<S>::figment())
+        Config::from_provider(Config::figment())
     }
 
     /// Returns the current `Config`
@@ -160,7 +159,7 @@ where
     /// See `Config::figment_with_root`
     #[track_caller]
     pub fn load_with_root(root: impl Into<PathBuf>) -> Self {
-        Config::<S>::from_provider(Config::<S>::figment_with_root(root))
+        Config::from_provider(Config::figment_with_root(root))
     }
 
     /// Extract a `Config` from `provider`, panicking if extraction fails.
@@ -192,7 +191,7 @@ where
     /// Attempts to build a `Config` using a [PathBuf] toml file.
     /// If the file does not exist, it will be created with default values.
     pub fn from_toml(path: impl Into<PathBuf>) -> Result<Self, ExtractConfigError> {
-        let figment = Config::<S>::figment().merge(TomlFileProvider::new(None, path));
+        let figment = Config::figment().merge(TomlFileProvider::new(None, path));
         Self::try_from(figment)
     }
 
@@ -239,7 +238,7 @@ where
     /// let my_config = Config::figment().extract::<Config>();
     /// ```
     pub fn figment() -> Figment {
-        Config::<S>::default().into()
+        Config::default().into()
     }
 
     /// Returns the default figment enhanced with additional context extracted from the provided
@@ -268,7 +267,7 @@ where
     pub fn with_root(root: impl Into<PathBuf>) -> Self {
         Config {
             __root: RootPath(root.into()),
-            ..Config::<S>::default()
+            ..Config::default()
         }
     }
 
@@ -284,17 +283,17 @@ where
     ///
     /// If the `STACK_PROFILE` env variable is not set, this returns the `DEFAULT_PROFILE`
     pub fn selected_profile() -> Profile {
-        Profile::from_env_or("STACK_PROFILE", Config::<S>::DEFAULT_PROFILE)
+        Profile::from_env_or("STACK_PROFILE", Config::DEFAULT_PROFILE)
     }
 
     /// Returns the path to the global toml file that's stored at `~/.stack/stack.toml`
     pub fn stack_dir_toml() -> Option<PathBuf> {
-        Self::stack_dir().map(|p| p.join(Config::<S>::FILE_NAME))
+        Self::stack_dir().map(|p| p.join(Config::FILE_NAME))
     }
 
     /// Returns the path to the config dir `~/.stack/`
     pub fn stack_dir() -> Option<PathBuf> {
-        dirs_next::home_dir().map(|p| p.join(Config::<S>::STACK_DIR_NAME))
+        dirs_next::home_dir().map(|p| p.join(Config::STACK_DIR_NAME))
     }
 
     /// Sets the l1 client to use via a cli prompt.
@@ -353,15 +352,15 @@ where
         figment = figment.select(profile.clone());
 
         // use [profile.<profile>] as [<profile>]
-        let mut profiles = vec![Config::<S>::DEFAULT_PROFILE];
-        if profile != Config::<S>::DEFAULT_PROFILE {
+        let mut profiles = vec![Config::DEFAULT_PROFILE];
+        if profile != Config::DEFAULT_PROFILE {
             profiles.push(profile.clone());
         }
         let provider = toml_provider; // toml_provider.strict_select(profiles);
 
         // merge the default profile as a base
-        if profile != Config::<S>::DEFAULT_PROFILE {
-            figment = figment.merge(provider.rename(Config::<S>::DEFAULT_PROFILE, profile.clone()));
+        if profile != Config::DEFAULT_PROFILE {
+            figment = figment.merge(provider.rename(Config::DEFAULT_PROFILE, profile.clone()));
         }
 
         // merge the profile
@@ -370,10 +369,7 @@ where
     }
 }
 
-impl<S> Provider for Config<S>
-where
-    S: StageProvider,
-{
+impl Provider for Config<'_> {
     fn metadata(&self) -> Metadata {
         Metadata::named("OP Stack Config")
     }
@@ -392,26 +388,23 @@ where
     }
 }
 
-impl<S> From<Config<S>> for Figment
-where
-    S: StageProvider,
-{
-    fn from(c: Config<S>) -> Figment {
-        let profile = Config::<S>::selected_profile();
+impl From<Config<'_>> for Figment {
+    fn from(c: Config<'_>) -> Figment {
+        let profile = Config::selected_profile();
         let mut figment = Figment::default();
 
         // merge global toml file
-        if let Some(global_toml) = Config::<S>::stack_dir_toml().filter(|p| p.exists()) {
-            figment = Config::<S>::merge_toml_provider(
+        if let Some(global_toml) = Config::stack_dir_toml().filter(|p| p.exists()) {
+            figment = Config::merge_toml_provider(
                 figment,
                 TomlFileProvider::new(None, global_toml).cached(),
                 profile.clone(),
             );
         }
         // merge local toml file
-        figment = Config::<S>::merge_toml_provider(
+        figment = Config::merge_toml_provider(
             figment,
-            TomlFileProvider::new(Some("OP_STACK_CONFIG"), c.__root.0.join(Config::<S>::FILE_NAME))
+            TomlFileProvider::new(Some("OP_STACK_CONFIG"), c.__root.0.join(Config::FILE_NAME))
                 .cached(),
             profile.clone(),
         );
@@ -429,7 +422,7 @@ where
                     ])
                     .map(|key| {
                         let key = key.as_str();
-                        if Config::<S>::STANDALONE_SECTIONS.iter().any(|section| {
+                        if Config::STANDALONE_SECTIONS.iter().any(|section| {
                             key.starts_with(&format!("{}_", section.to_ascii_uppercase()))
                         }) {
                             key.replacen('_', ".", 1).into()
@@ -445,10 +438,7 @@ where
     }
 }
 
-impl<S> Default for Config<S>
-where
-    S: StageProvider,
-{
+impl Default for Config<'_> {
     fn default() -> Self {
         Self {
             profile: Self::DEFAULT_PROFILE,

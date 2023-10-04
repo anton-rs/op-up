@@ -18,7 +18,6 @@
 /// ```rust
 /// use std::path::PathBuf;
 /// use op_config::Config;
-/// use op_config::stack::StackConfig;
 ///
 /// let config = Config::default();
 /// assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
