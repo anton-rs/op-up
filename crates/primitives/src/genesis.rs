@@ -14,6 +14,7 @@ pub static GENESIS_DEV_ACCOUNTS: Lazy<Vec<H160>> = Lazy::new(|| {
         H160::from_slice(&hex!("70997970c51812dc3a010c7d01b50e0d17dc79c8")),
         H160::from_slice(&hex!("f39fd6e51aad88f6f4ce6ab8827279cfffb92266")),
         H160::from_slice(&hex!("9d14A1992b81dfD355AE83b0b54Dd51582f62db2")),
+        H160::from_slice(&hex!("3fab184622dc19b6109349b94811493bf2a45362")),
     ]
 });
 

@@ -77,6 +77,7 @@ impl Stages {
         let genesis_l1_file = devnet_dir.join("genesis-l1.json");
         let genesis_l2_file = devnet_dir.join("genesis-l2.json");
         let genesis_rollup_file = devnet_dir.join("rollup.json");
+        let allocs_file = devnet_dir.join("allocs-l1.json");
         let addresses_json_file = devnet_dir.join("addresses.json");
         let addresses_sdk_json_file = devnet_dir.join("addresses-sdk.json");
         let deploy_config_file = deploy_config_dir.join("devnetL1.json");
@@ -99,7 +100,7 @@ impl Stages {
         let curr_timestamp = genesis::current_timestamp();
 
         // Step 1.
-        // Create L1 genesis
+        // Create L1 genesis template
         if !genesis_l1_file.exists() {
             tracing::info!(target: "opup", "Creating L1 genesis...");
             let genesis_template = genesis::genesis_template_string(curr_timestamp)
@@ -107,7 +108,7 @@ impl Stages {
             if let Some(parent_dir) = genesis_l1_file.parent() {
                 std::fs::create_dir_all(parent_dir)?;
             }
-            std::fs::write(genesis_l1_file, genesis_template)?;
+            std::fs::write(genesis_l1_file.clone(), genesis_template)?;
         } else {
             tracing::info!(target: "opup", "L1 genesis already found.");
         }
@@ -124,19 +125,52 @@ impl Stages {
                 check_command(make_command, "Failed to do cannon prestate")?;
             }
             // TODO: check is allocs here actually do what we want
-            // let allocs = Command::new("make")
-            //     .args(["devnet-allocs"])
-            //     .current_dir(&op_monorepo_dir)
-            //     .output()?;
-            // check_command(allocs, "Failed to do allocs")?;
+            let allocs = Command::new("make")
+                .args(["devnet-allocs"])
+                .current_dir(&op_monorepo_dir)
+                .output()?;
+            check_command(allocs, "Failed to do allocs")?;
+
+            let _ = Command::new("cp")
+                .args([".devnet/addresses.json", "../.devnet/"])
+                .current_dir(&op_monorepo_dir)
+                .output()?;
+            let copy = Command::new("cp")
+                .args([".devnet/allocs-l1.json", "../.devnet/"])
+                .current_dir(&op_monorepo_dir)
+                .output()?;
+            check_command(copy, "Failed to do copy of addresses.json and allocs-l1.json")?;
         }
+
+        // Step 3.
+        // Generate network configs
+        tracing::info!(target: "opup", "Generating network configs...");
+        let mut deploy_config = json::read_json(&deploy_config_file)?;
+        let hex_timestamp = format!("{:#x}", curr_timestamp);
+        json::set_json_property(
+            &mut deploy_config,
+            "l1GenesisBlockTimestamp",
+            hex_timestamp,
+        );
+        json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
+        json::write_json(&deploy_config_file, &deploy_config)?;
+
+        let l1_genesis = Command::new("go")
+            .args(["run", "cmd/main.go", "genesis", "l1"])
+            .args(["--deploy-config", deploy_config_file.to_str().unwrap()])
+            .args(["--l1-allocs", allocs_file.to_str().unwrap()])
+            .args(["--l1-deployments", addresses_json_file.to_str().unwrap()])
+            .args(["--outfile.l1", genesis_l1_file.to_str().unwrap()])
+            .current_dir(&op_node_dir)
+            .output()?;
+        check_command(l1_genesis, "Failed to create L1 genesis")?;
 
         // Step 2.
         // Start L1 execution client
 
         tracing::info!(target: "opup", "Starting L1 execution client...");
         let start_l1 = Command::new("docker-compose")
-            .args(["up", "-d", "--no-deps", "--build", "l1"])
+            .args(["up", "-d", "l1"])
             .env("PWD", docker_dir.to_str().unwrap())
             .env("L1_CLIENT_CHOICE", self.config.l1_client.to_string())
             .current_dir(&docker_dir)
@@ -144,18 +178,6 @@ impl Stages {
 
         check_command(start_l1, "Failed to start L1 execution client")?;
         net::wait_up(L1_PORT, 10, 1)?;
-
-        // Step 3.
-        // Generate network configs
-        tracing::info!(target: "opup", "Generating network configs...");
-        let mut deploy_config = json::read_json(&deploy_config_file)?;
-        json::set_json_property(
-            &mut deploy_config,
-            "l1GenesisBlockTimestamp",
-            curr_timestamp,
-        );
-        json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
-        json::write_json(&deploy_config_file, &deploy_config)?;
 
         // Step 4.
         // Deploy contracts
@@ -178,7 +200,6 @@ impl Stages {
                 let send_eth = Command::new("cast")
                     .args(["send"])
                     .args(["--from", "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"])
-                    .args(["--private-key", "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"])
                     .args(["--rpc-url", L1_URL])
                     .args(["--unlocked", "--value", "1ether", "0x3fAB184622Dc19b6109349B94811493BF2a45362"])
                     .current_dir(&contracts_bedrock_dir)
@@ -188,7 +209,6 @@ impl Stages {
                 let deploy_1 = Command::new("cast")
                     .args(["publish"])
                     .args(["--rpc-url", L1_URL])
-                    .args(["--private-key", "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"])
                     .args(["0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222"])
                     .current_dir(&contracts_bedrock_dir)
                     .output()?;
@@ -197,7 +217,6 @@ impl Stages {
                 let deploy_2 = Command::new("forge")
                     .args(["script", "scripts/Deploy.s.sol:Deploy"])
                     .args(["--sender", "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"])
-                    .args(["--private-key", "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"])
                     .args(["--rpc-url", L1_URL])
                     .args(["--broadcast", "--unlocked"])
                     .current_dir(&contracts_bedrock_dir)
