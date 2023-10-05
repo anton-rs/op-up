@@ -13,8 +13,8 @@ fn test_default_config() {
     assert_eq!(config.rollup_client, RollupClient::default());
     assert_eq!(config.challenger, ChallengerAgent::default());
 
-    assert_eq!(config.enable_sequencing, false);
-    assert_eq!(config.enable_fault_proofs, false);
+    assert!(!config.enable_sequencing);
+    assert!(!config.enable_fault_proofs);
 }
 
 #[test]
@@ -47,8 +47,8 @@ fn test_read_config_from_toml() {
     assert_eq!(config.l2_client, L2Client::OpReth);
     assert_eq!(config.rollup_client, RollupClient::Magi);
     assert_eq!(config.challenger, ChallengerAgent::OpChallengerGo);
-    assert_eq!(config.enable_sequencing, true);
-    assert_eq!(config.enable_fault_proofs, true);
+    assert!(config.enable_sequencing);
+    assert!(config.enable_fault_proofs);
 
     // Drop the `tmpdir` variable, which deletes the temporary directory.
     drop(tmpdir);
