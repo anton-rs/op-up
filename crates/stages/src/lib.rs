@@ -101,16 +101,6 @@ impl Stages {
         }
 
         // Step 1.
-        // Generate deploy config
-
-        tracing::info!(target: "opup", "Generating deploy config...");
-        let mut deploy_config = json::read_json(&deploy_config_file)?;
-        let hex_timestamp = format!("{:#x}", curr_timestamp);
-        json::set_json_property(&mut deploy_config, "l1GenesisBlockTimestamp", hex_timestamp);
-        json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
-        json::write_json(&deploy_config_file, &deploy_config)?;
-
-        // Step 2.
         // Create prestate and allocs
 
         // TODO: is this condition correct?
@@ -141,6 +131,16 @@ impl Stages {
                 .output()?;
             check_command(copy_allocs, "Failed to do copy of allocs.json")?;
         }
+
+        // Step 2.
+        // Generate deploy config
+
+        tracing::info!(target: "opup", "Generating deploy config...");
+        let mut deploy_config = json::read_json(&deploy_config_file)?;
+        let hex_timestamp = format!("{:#x}", curr_timestamp);
+        json::set_json_property(&mut deploy_config, "l1GenesisBlockTimestamp", hex_timestamp);
+        json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
+        json::write_json(&deploy_config_file, &deploy_config)?;
 
         // Step 3.
         // Create L1 genesis
@@ -176,6 +176,8 @@ impl Stages {
 
         check_command(start_l1, "Failed to start L1 execution client")?;
         net::wait_up(L1_PORT, 10, 1)?;
+        // TODO: is this sleep necessary?
+        std::thread::sleep(std::time::Duration::from_secs(10));
 
         // Step 5.
         // Bind the addresses (contracts already deployed by "allocs" step)
