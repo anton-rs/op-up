@@ -85,11 +85,15 @@ impl Composer {
             ..Default::default()
         });
 
+        println!("fetching res");
+
         let res = self
             .daemon
             .create_image(options, None, None)
             .try_collect::<Vec<_>>()
             .await?;
+
+        println!("{:?}", res);
 
         tracing::debug!("Pulled docker image: {:?}", res);
 
