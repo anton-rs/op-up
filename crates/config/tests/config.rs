@@ -13,8 +13,8 @@ fn test_default_config() {
     assert_eq!(config.rollup_client, RollupClient::default());
     assert_eq!(config.challenger, ChallengerAgent::default());
 
-    assert_eq!(config.enable_sequencing, false);
-    assert_eq!(config.enable_fault_proofs, false);
+    assert!(!config.enable_sequencing);
+    assert!(!config.enable_fault_proofs);
 }
 
 #[test]
