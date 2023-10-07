@@ -8,7 +8,7 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use bollard::{
     container::{
@@ -22,16 +22,7 @@ use bollard::{
 };
 use eyre::Result;
 use futures_util::{StreamExt, TryStreamExt};
-
-/// Placeholder config struct.
-/// TODO: Use the actual parsed component TOML file struct instead of this placeholder
-#[derive(Debug)]
-pub struct ComponentConfig<'a> {
-    /// The name of the component.
-    pub name: &'a str,
-    /// The name of the Docker image to use for this component.
-    pub image_name: &'a str,
-}
+use serde::Serialize;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]
@@ -79,23 +70,17 @@ impl Composer {
     }
 
     /// Pull the specified Docker image from Docker Hub
-    pub async fn pull_image(&self, name: &str) -> Result<()> {
-        let options = Some(CreateImageOptions {
-            from_image: name,
-            ..Default::default()
-        });
-
-        println!("fetching res");
-
+    pub async fn create_image<T>(&self, opts: CreateImageOptions<'_, T>) -> Result<()>
+    where
+        T: Into<String> + Serialize + Clone + Debug,
+    {
         let res = self
             .daemon
-            .create_image(options, None, None)
+            .create_image(Some(opts), None, None)
             .try_collect::<Vec<_>>()
             .await?;
 
-        println!("{:?}", res);
-
-        tracing::debug!("Pulled docker image: {:?}", res);
+        tracing::debug!("Created docker image: {:?}", res);
 
         Ok(())
     }
@@ -105,10 +90,11 @@ impl Composer {
     /// The container will be created from the options specified in the component TOML file.
     pub async fn create_container(
         &self,
-        component: ComponentConfig<'_>,
+        name: &str,
+        image_name: &str,
     ) -> Result<ContainerCreateResponse> {
         let create_options = CreateContainerOptions {
-            name: component.name,
+            name,
             platform: None,
         };
 
@@ -117,7 +103,7 @@ impl Composer {
 
         // TODO: add options from component TOML file here
         let config = Config {
-            image: Some(component.image_name),
+            image: Some(image_name),
             labels: Some(labels),
             ..Default::default()
         };
@@ -127,11 +113,7 @@ impl Composer {
             .create_container(Some(create_options), config)
             .await?;
 
-        tracing::debug!(
-            "Created docker container {} with ID: {}",
-            component.name,
-            res.id
-        );
+        tracing::debug!("Created docker container {} with ID: {}", name, res.id);
 
         Ok(res)
     }

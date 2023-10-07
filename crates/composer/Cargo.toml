@@ -13,6 +13,7 @@ repository.workspace = true
 [dependencies]
 eyre.workspace = true
 tracing.workspace = true
+serde.workspace = true
 
 tokio = { version = "1.11.0", features = ["full"] }
 futures-util = "0.3.28"
