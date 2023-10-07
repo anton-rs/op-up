@@ -1,9 +1,6 @@
 /// The CLI entrypoint for the binary.
 pub mod cli;
 
-/// Module containing stack packages.
-pub mod stack;
-
 /// Command banners.
 pub mod banners;
 
@@ -12,3 +9,6 @@ pub mod telemetry;
 
 /// Runner contains asynchronous helpers for running commands.
 pub mod runner;
+
+/// The Up subcommand module that contains the logic for bringing up the stack.
+pub mod up;
