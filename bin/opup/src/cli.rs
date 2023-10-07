@@ -1,6 +1,7 @@
 use clap::{ArgAction, Parser, Subcommand};
 use eyre::Result;
-use std::path::PathBuf;
+
+use crate::up::UpCommand;
 
 /// Command line arguments
 #[derive(Parser, Debug)]
@@ -13,17 +14,13 @@ pub struct Args {
     /// The subcommand to run
     #[clap(subcommand)]
     pub command: Option<Command>,
-
-    /// An optional path to a stack config file.
-    #[arg(long, short)]
-    config: Option<PathBuf>,
 }
 
 /// Possible CLI subcommands
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Build and run the devnet stack
-    Up,
+    Up(UpCommand),
     /// Bring the devnet stack down
     Down,
     /// Nuke the devnet stack
@@ -33,17 +30,22 @@ pub enum Command {
 }
 
 pub fn run() -> Result<()> {
-    let Args { v, config, command } = Args::parse();
+    let Args { v, command } = Args::parse();
 
     crate::telemetry::init_tracing_subscriber(v)?;
 
     crate::banners::banner()?;
 
     match command {
-        Some(Command::Up) | None => crate::stack::Stack::new(config).run()?,
-        Some(Command::Down) => unimplemented!("down command not yet implemented"),
-        Some(Command::Nuke) => unimplemented!("nuke command not yet implemented"),
-        Some(Command::Clean) => unimplemented!("clean command not yet implemented"),
+        // If no subcommand is provided, run the Up command with default config.
+        None => UpCommand::new(None, false).run()?,
+
+        Some(command) => match command {
+            Command::Up(up_command) => up_command.run()?,
+            Command::Down => unimplemented!("down command not yet implemented"),
+            Command::Nuke => unimplemented!("nuke command not yet implemented"),
+            Command::Clean => unimplemented!("clean command not yet implemented"),
+        },
     }
 
     Ok(())
