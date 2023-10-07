@@ -1343,9 +1343,11 @@ version = "0.1.0"
 dependencies = [
  "bollard",
  "eyre",
+ "futures-util",
  "pretty_assertions",
  "tokio",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
