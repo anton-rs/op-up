@@ -1,44 +1,70 @@
-use bollard::image::CreateImageOptions;
+use std::collections::HashMap;
+
+use bollard::{image::CreateImageOptions, service::ContainerConfig};
 use op_composer::Composer;
 
+/// This is a basic test of the Composer functionality to create and start a Docker container, run a simple
+/// command in the container, and then stop and remove it. If the Docker daemon is not running, this test
+/// will be skipped.
 #[tokio::test]
 pub async fn test_basic_docker_composer() -> eyre::Result<()> {
     let _ = tracing_subscriber::fmt::try_init();
 
-    let composer = Composer::new().await;
-
-    let container_name = "hello-world-container";
-    let container_image = "hello-world:linux";
-
-    // 1. Pull image from docker hub
-    composer
-        .create_image(CreateImageOptions {
-            from_image: container_image,
+    if let Ok(composer) = Composer::new() {
+        // 1. Create the image
+        let image_config = CreateImageOptions {
+            from_image: "alpine",
+            platform: "amd64",
             ..Default::default()
-        })
-        .await?;
+        };
 
-    // 2. Create container from image
-    let hello_world_container = composer
-        .create_container(container_name, container_image)
-        .await?;
+        let image_id = composer.create_image(image_config).await?;
+        println!("Created image: {}", image_id);
 
-    let all_containers = composer.list_containers(None).await?;
-    assert_eq!(all_containers.len(), 1);
+        // 2. Create the container with the new image
+        let container_config = ContainerConfig {
+            entrypoint: Some(vec![
+                "tail".to_string(),
+                "-f".to_string(),
+                "/dev/null".to_string(),
+            ]),
+            exposed_ports: Some(HashMap::<_, _>::from_iter([
+                ("8545".to_string(), HashMap::new()),
+                ("6060".to_string(), HashMap::new()),
+            ])),
+            image: Some(image_id),
+            ..Default::default()
+        };
 
-    // 3. Start running container
-    composer.start_container(&hello_world_container.id).await?;
+        let container = composer
+            .create_container("test_basic_docker_composer", container_config)
+            .await?;
+        println!("Created container: {:?}", container);
 
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        let all_containers = composer.list_containers(None).await?;
+        assert_eq!(all_containers.len(), 1);
 
-    // 4. Stop running container
-    composer.stop_container(&hello_world_container.id).await?;
+        // 3. Start running container
+        composer.start_container(&container.id).await?;
+        println!("Started container: {:?}", container);
 
-    // 5. Remove container artifacts
-    composer.remove_container(&hello_world_container.id).await?;
+        // 4. Execute a simple command in the container
+        let cmd_output = composer
+            .remote_exec(&container.id, vec!["ls", "-la"])
+            .await?;
+        println!("Command output: {:?}", cmd_output);
 
-    let all_containers = composer.list_containers(None).await?;
-    assert_eq!(all_containers.len(), 0);
+        // 5. Stop running container
+        composer.stop_container(&container.id).await?;
+
+        // 6. Remove container artifacts
+        composer.remove_container(&container.id).await?;
+
+        let all_containers = composer.list_containers(None).await?;
+        assert_eq!(all_containers.len(), 0);
+    } else {
+        tracing::warn!("Docker daemon not running, skipping test");
+    }
 
     Ok(())
 }

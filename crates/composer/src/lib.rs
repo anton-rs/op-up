@@ -12,15 +12,15 @@ use std::{collections::HashMap, fmt::Debug};
 
 use bollard::{
     container::{
-        Config, CreateContainerOptions, ListContainersOptions, LogOutput, RemoveContainerOptions,
+        CreateContainerOptions, ListContainersOptions, LogOutput, RemoveContainerOptions,
         StartContainerOptions, StopContainerOptions,
     },
     exec::{CreateExecOptions, StartExecResults},
     image::CreateImageOptions,
-    service::{ContainerCreateResponse, ContainerSummary},
+    service::{ContainerConfig, ContainerCreateResponse, ContainerSummary},
     Docker,
 };
-use eyre::Result;
+use eyre::{bail, Result};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Serialize;
 
@@ -33,14 +33,11 @@ pub struct Composer {
 
 impl Composer {
     /// Create a new instance of the Composer.
-    pub async fn new() -> Self {
-        let daemon = Docker::connect_with_local_defaults().expect(
-            "Failed to connect to Docker daemon. 
-            Please check that Docker is installed and running on your machine",
-        );
+    pub fn new() -> Result<Self> {
+        let daemon = Docker::connect_with_local_defaults()?;
 
         tracing::debug!("Successfully connected to Docker daemon");
-        Self { daemon }
+        Ok(Self { daemon })
     }
 
     /// List all the OP-UP docker containers existing on the host.
@@ -69,8 +66,10 @@ impl Composer {
             .map_err(Into::into)
     }
 
-    /// Pull the specified Docker image from Docker Hub
-    pub async fn create_image<T>(&self, opts: CreateImageOptions<'_, T>) -> Result<()>
+    /// Create a Docker image from the specified options.
+    ///
+    /// Returns the ID of the created image.
+    pub async fn create_image<T>(&self, opts: CreateImageOptions<'_, T>) -> Result<String>
     where
         T: Into<String> + Serialize + Clone + Debug,
     {
@@ -78,39 +77,43 @@ impl Composer {
             .daemon
             .create_image(Some(opts), None, None)
             .try_collect::<Vec<_>>()
-            .await?;
+            .await
+            .map_err(|e| {
+                println!("Error creating docker image: {:?}", e);
+                e
+            })?;
 
         tracing::debug!("Created docker image: {:?}", res);
 
-        Ok(())
+        match res.get(0) {
+            Some(info) => match info.id.as_ref() {
+                Some(id) => Ok(id.clone()),
+                None => bail!("No image ID found in response"),
+            },
+            None => bail!("No image info found in response"),
+        }
     }
 
     /// Create a Docker container for the specified OP Stack component
-    ///
-    /// The container will be created from the options specified in the component TOML file.
     pub async fn create_container(
         &self,
         name: &str,
-        image_name: &str,
+        mut config: ContainerConfig,
     ) -> Result<ContainerCreateResponse> {
         let create_options = CreateContainerOptions {
             name,
             platform: None,
         };
 
-        let mut labels = HashMap::new();
-        labels.insert("com.docker.compose.project", "op-up");
-
-        // TODO: add options from component TOML file here
-        let config = Config {
-            image: Some(image_name),
-            labels: Some(labels),
-            ..Default::default()
-        };
+        let labels = config.labels.get_or_insert_with(HashMap::new);
+        labels.insert(
+            "com.docker.compose.project".to_string(),
+            "op-up".to_string(),
+        );
 
         let res = self
             .daemon
-            .create_container(Some(create_options), config)
+            .create_container(Some(create_options), config.into())
             .await?;
 
         tracing::debug!("Created docker container {} with ID: {}", name, res.id);
@@ -193,7 +196,7 @@ impl Composer {
     }
 
     /// Execute a command on a running container by its ID and return the output.
-    pub async fn remote_exec(&self, id: &str, cmd: Vec<&str>) -> Result<()> {
+    pub async fn remote_exec(&self, id: &str, cmd: Vec<&str>) -> Result<Vec<LogOutput>> {
         let exec_options = CreateExecOptions {
             attach_stdout: Some(true),
             attach_stderr: Some(true),
@@ -215,6 +218,6 @@ impl Composer {
             }
         }
 
-        Ok(())
+        Ok(result)
     }
 }
