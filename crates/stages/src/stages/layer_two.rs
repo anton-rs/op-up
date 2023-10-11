@@ -35,7 +35,7 @@ impl crate::Stage for LayerTwo {
         let start_l2 = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "l2"])
             .env("PWD", docker_dir)
-            .env("L2_CLIENT_CHOICE", self.l2_client)
+            .env("L2_CLIENT_CHOICE", &self.l2_client)
             .current_dir(&docker_dir)
             .output()?;
 

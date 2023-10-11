@@ -35,7 +35,7 @@ impl crate::Stage for Rollup {
         let start_rollup = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
             .env("PWD", docker_dir)
-            .env("ROLLUP_CLIENT_CHOICE", self.rollup_client)
+            .env("ROLLUP_CLIENT_CHOICE", &self.rollup_client)
             .current_dir(&docker_dir)
             .output()?;
 

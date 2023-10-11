@@ -27,17 +27,21 @@ impl crate::Stage for Challenger {
             .flatten()
             .ok_or(eyre::eyre!("challenger stage missing dockerfile directory"))?;
 
-        let addresses = self
-            .addresses
-            .as_ref()
-            .ok_or(eyre::eyre!("challenger stage missing addresses"))?;
+        // let addresses = self
+        //     .addresses
+        //     .as_ref()
+        //     .ok_or(eyre::eyre!("challenger stage missing addresses"))?;
+
+        let proj_root = project_root::get_project_root()?;
+        let addresses_json_file = proj_root.as_path().join(".devnet").join("addresses.json");
+        let addresses = crate::json::read_json(&addresses_json_file)?;
 
         let start_challenger = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "challenger"])
             .env("PWD", docker_dir)
             .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
             .env("DGF_ADDRESS", addresses["DisputeGameFactory"].to_string())
-            .env("CHALLENGER_AGENT_CHOICE", self.challenger)
+            .env("CHALLENGER_AGENT_CHOICE", &self.challenger)
             .current_dir(&docker_dir)
             .output()?;
 

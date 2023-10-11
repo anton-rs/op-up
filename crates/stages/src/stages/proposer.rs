@@ -25,10 +25,14 @@ impl crate::Stage for Proposer {
             .flatten()
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
-        let addresses = self
-            .addresses
-            .as_ref()
-            .ok_or(eyre::eyre!("missing addresses"))?;
+        // let addresses = self
+        //     .addresses
+        //     .as_ref()
+        //     .ok_or(eyre::eyre!("missing addresses"))?;
+
+        let proj_root = project_root::get_project_root()?;
+        let addresses_json_file = proj_root.as_path().join(".devnet").join("addresses.json");
+        let addresses = crate::json::read_json(&addresses_json_file)?;
 
         let start_proposer = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "proposer"])

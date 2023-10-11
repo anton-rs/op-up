@@ -22,3 +22,4 @@ pub trait Stage {
 
 /// Core Stages.
 pub mod stages;
+pub use stages::Stages;
