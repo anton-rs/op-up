@@ -21,6 +21,31 @@ use crate::providers::{
 use crate::root::RootPath;
 // use crate::stages::StageProvider;
 
+/// Optimism monorepo git url.
+pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
+
+/// L1 node url.
+pub const L1_URL: &str = "http://localhost:8545";
+
+/// L1 node port.
+pub const L1_PORT: u16 = 8545;
+
+/// L2 node url.
+pub const L2_URL: &str = "http://localhost:9545";
+
+/// L2 node port.
+pub const L2_PORT: u16 = 9545;
+
+/// Rollup node url.
+pub const ROLLUP_URL: &str = "http://localhost:7545";
+
+/// Rollup node port.
+pub const ROLLUP_PORT: u16 = 7545;
+
+/// Testing deployer private key.
+pub const DEPLOYER_PRIVATE_KEY: &str =
+    "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+
 /// OP Stack Configuration
 ///
 /// # Defaults
@@ -77,6 +102,24 @@ pub struct Config<'a> {
     pub l2_client: L2Client,
     /// The type of Rollup Client to use. **(default: _default_ `RollupClient::OpNode`)**
     pub rollup_client: RollupClient,
+
+    // todo: parse the urls properly as opposed to using strings
+    /// The L1 Client base URL.
+    pub l1_client_url: Option<String>,
+    /// The L1 Client port.
+    pub l1_client_port: Option<u16>,
+    /// The L2 Client URL.
+    pub l2_client_url: Option<String>,
+    /// The L2 Client port.
+    pub l2_client_port: Option<u16>,
+    /// The rollup client URL.
+    pub rollup_client_url: Option<String>,
+    /// The rollup client port.
+    pub rollup_client_port: Option<u16>,
+
+    /// Deployer is the contract deployer.
+    /// By default, this is a hardhat test account.
+    pub deployer: Option<String>,
 
     /// The challenger agent to use. **(default: _default_ `ChallengerAgent::OpChallengerGo`)**
     pub challenger: ChallengerAgent,
@@ -450,6 +493,13 @@ impl Default for Config<'_> {
             artifacts: PathBuf::from(Self::STACK_DIR_NAME),
             l1_client: L1Client::default(),
             l2_client: L2Client::default(),
+            l1_client_url: Some(L1_URL.to_string()),
+            l1_client_port: Some(L1_PORT),
+            l2_client_url: Some(L2_URL.to_string()),
+            l2_client_port: Some(L2_PORT),
+            deployer: Some(DEPLOYER_PRIVATE_KEY.to_string()),
+            rollup_client_url: Some(ROLLUP_URL.to_string()),
+            rollup_client_port: Some(ROLLUP_PORT),
             rollup_client: RollupClient::default(),
             challenger: ChallengerAgent::default(),
             enable_sequencing: false,
