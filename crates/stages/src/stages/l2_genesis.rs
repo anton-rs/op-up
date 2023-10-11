@@ -27,15 +27,13 @@ impl crate::Stage for L2Genesis {
         let deploy_config_file = self
             .deploy_config_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing deploy config file"))?;
 
         let deployment_dir = self
             .deployment_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing deployment directory"))?;
 
         let l2_genesis_file = self
@@ -46,15 +44,13 @@ impl crate::Stage for L2Genesis {
         let genesis_rollup_file = self
             .genesis_rollup_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing genesis rollup file"))?;
 
         let op_node_dir = self
             .op_node_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing op node directory"))?;
 
         if l2_genesis_file.exists() {
@@ -74,7 +70,7 @@ impl crate::Stage for L2Genesis {
             .args(["--deployment-dir", deployment_dir])
             .args(["--outfile.l2", l2_genesis_file_str])
             .args(["--outfile.rollup", genesis_rollup_file])
-            .current_dir(&op_node_dir)
+            .current_dir(op_node_dir)
             .output()?;
 
         if !l2_genesis.status.success() {

@@ -15,7 +15,7 @@ pub(crate) mod net;
 /// Stage
 ///
 /// A stage is a synchronous step in the [Stages] executor that handles a component of the op stack.
-pub trait Stage {
+pub trait Stage: std::fmt::Debug {
     /// Execute the stage.
     fn execute(&self) -> eyre::Result<()>;
 }

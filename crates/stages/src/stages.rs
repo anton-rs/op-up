@@ -1,33 +1,32 @@
-use std::path::Path;
-use std::process::Command;
-
+#![allow(missing_docs)]
 use eyre::Result;
 
 use op_config::Config;
-use op_contracts::AddressManager;
 use op_primitives::genesis;
 
-mod directories;
-mod artifacts;
-mod cannon;
-mod allocs;
-mod contracts;
+pub mod allocs;
+pub mod artifacts;
+pub mod cannon;
+pub mod contracts;
+pub mod deploy_config;
+pub mod directories;
 
-mod l1_genesis;
-mod l1_exec;
+pub mod l1_exec;
+pub mod l1_genesis;
 
-mod l2_genesis;
-mod l2_exec;
+pub mod l2_exec;
+pub mod l2_genesis;
 
-mod batcher;
-mod challenger;
-mod proposer;
-mod rollup;
-mod stateviz;
+pub mod batcher;
+pub mod challenger;
+pub mod proposer;
+pub mod rollup;
+pub mod stateviz;
 
 /// Stages
 ///
 /// This module contains the code for the stages of the stack.
+#[derive(Debug)]
 pub struct Stages<'a> {
     /// The stack config.
     pub config: Config<'a>,
@@ -46,10 +45,17 @@ impl Stages<'_> {
         vec![
             Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
             Box::new(directories::Directories::new(None)),
-            Box::new(cannon::Prestate::new(None)),
-            Box::new(allocs::Allocs::new(None)),
+            Box::new(cannon::Prestate::new(None, None)),
+            Box::new(allocs::Allocs::new(None, None)),
             Box::new(deploy_config::DeployConfig::new(None, genesis_timestamp)),
-            Box::new(l1_genesis::L1Genesis::new(None, None, None, None, None, genesis_timstamp)),
+            Box::new(l1_genesis::L1Genesis::new(
+                None,
+                None,
+                None,
+                None,
+                None,
+                genesis_timestamp,
+            )),
             Box::new(l1_exec::Executor::new(None, l1_client)),
             Box::new(l2_genesis::L2Genesis::new(None, None, None, None, None)),
             Box::new(contracts::Contracts::new()),
@@ -67,7 +73,7 @@ impl Stages<'_> {
         tracing::debug!(target: "stages", "executing stages");
 
         let docker_stages = self.docker();
-        let inner = self.inner.as_ref().unwrap_or_else(|| &docker_stages);
+        let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
         for stage in inner {
             stage.execute()?;

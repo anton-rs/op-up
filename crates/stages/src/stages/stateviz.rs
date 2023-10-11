@@ -21,8 +21,7 @@ impl crate::Stage for Stateviz {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("stateviz stage missing dockerfile directory"))?;
 
         // let addresses = self
@@ -38,7 +37,7 @@ impl crate::Stage for Stateviz {
             .args(["up", "-d", "--no-deps", "--build", "stateviz"])
             .env("PWD", docker_dir)
             .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         // Check the output of the command.

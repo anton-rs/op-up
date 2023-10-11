@@ -28,27 +28,30 @@ impl crate::Stage for L1Genesis {
         let deploy_config_file = self
             .deploy_config_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing deploy config file"))?;
 
         let allocs_file = self
             .allocs_file
             .as_ref()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing allocs file"))?;
 
-        let addresses_json_file = self
-            .addresses_json_file
+        let l1_genesis_file = self
+            .l1_genesis_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .ok_or(eyre::eyre!("missing l1 genesis file"))?;
+
+        let addresses_json = self
+            .addresses_json
+            .as_ref()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing l1 deployments file"))?;
 
         let op_node_dir = self
             .op_node_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing op node directory"))?;
 
         if l1_genesis_file.exists() {
@@ -61,16 +64,17 @@ impl crate::Stage for L1Genesis {
             .unwrap_or("failed to stringify l1 genesis file");
 
         tracing::info!(target: "stages", "Creating L1 genesis...");
-        let genesis_template = genesis::genesis_template_string(self.genesis_timestamp)
-            .ok_or_else(|| eyre::eyre!("Could not create genesis template"))?;
-        std::fs::write(&self.l1_genesis_file, genesis_template)?;
+        let genesis_template =
+            op_primitives::genesis::genesis_template_string(self.genesis_timestamp)
+                .ok_or_else(|| eyre::eyre!("Could not create genesis template"))?;
+        std::fs::write(l1_genesis_file, genesis_template)?;
         let l1_genesis = Command::new("go")
             .args(["run", "cmd/main.go", "genesis", "l1"])
             .args(["--deploy-config", deploy_config_file])
             .args(["--l1-allocs", allocs_file])
-            .args(["--l1-deployments", addresses_json_file])
+            .args(["--l1-deployments", addresses_json])
             .args(["--outfile.l1", l1_genesis_file_str])
-            .current_dir(&op_node_dir)
+            .current_dir(op_node_dir)
             .output()?;
 
         if !l1_genesis.status.success() {
@@ -102,7 +106,7 @@ impl L1Genesis {
                 deploy_config_file.unwrap_or(L1Genesis::get_deploy_config_file_unsafe()),
             ),
             allocs_file: Some(allocs_file.unwrap_or(L1Genesis::get_allocs_file_unsafe())),
-            addresses_json_file: Some(
+            addresses_json: Some(
                 addresses_json.unwrap_or(L1Genesis::get_addresses_json_file_unsafe()),
             ),
             op_node_dir: Some(op_node_dir.unwrap_or(L1Genesis::get_op_node_dir_unsafe())),
@@ -119,9 +123,7 @@ impl L1Genesis {
     pub fn get_l1_genesis_file_unsafe() -> PathBuf {
         let proj_root = project_root::get_project_root().expect("Failed to get project root");
         let op_up_dir = proj_root.as_path();
-        op_up_dir
-            .join(".devnet")
-            .join("genesis-l1.json")
+        op_up_dir.join(".devnet").join("genesis-l1.json")
     }
 
     /// Returns a [PathBuf] for the Deploy Config Directory.

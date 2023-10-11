@@ -17,7 +17,11 @@ impl crate::Stage for DeployConfig {
         tracing::info!(target: "stages", "Executing deploy config stage");
         let mut deploy_config = crate::json::read_json(&self.config)?;
         let hex_timestamp = format!("{:#x}", self.genesis_timestamp);
-        crate::json::set_json_property(&mut deploy_config, "l1GenesisBlockTimestamp", hex_timestamp);
+        crate::json::set_json_property(
+            &mut deploy_config,
+            "l1GenesisBlockTimestamp",
+            hex_timestamp,
+        );
         crate::json::set_json_property(&mut deploy_config, "l1StartingBlockTag", "earliest");
         crate::json::write_json(&self.config, &deploy_config)?;
         Ok(())
@@ -42,7 +46,8 @@ impl DeployConfig {
     pub fn get_deploy_config_file_unsafe() -> PathBuf {
         let proj_root = project_root::get_project_root().expect("Failed to get project root");
         let op_up_dir = proj_root.as_path();
-        op_up_dir.join("optimism")
+        op_up_dir
+            .join("optimism")
             .join("packages/contracts-bedrock")
             .join("deploy-config")
             .join("devnetL1.json")

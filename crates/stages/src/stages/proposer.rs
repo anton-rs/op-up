@@ -21,8 +21,7 @@ impl crate::Stage for Proposer {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
         // let addresses = self
@@ -38,7 +37,7 @@ impl crate::Stage for Proposer {
             .args(["up", "-d", "--no-deps", "--build", "proposer"])
             .env("PWD", docker_dir)
             .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         if !start_proposer.status.success() {

@@ -23,8 +23,7 @@ impl crate::Stage for Challenger {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("challenger stage missing dockerfile directory"))?;
 
         // let addresses = self
@@ -42,7 +41,7 @@ impl crate::Stage for Challenger {
             .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
             .env("DGF_ADDRESS", addresses["DisputeGameFactory"].to_string())
             .env("CHALLENGER_AGENT_CHOICE", &self.challenger)
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         // Check the output of the command.

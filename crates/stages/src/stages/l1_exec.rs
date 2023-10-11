@@ -20,15 +20,14 @@ impl crate::Stage for Executor {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
         let exec = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "l1"])
             .env("PWD", docker_dir)
             .env("L1_CLIENT_CHOICE", &self.l1_client)
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         if !exec.status.success() {

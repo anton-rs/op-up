@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use eyre::Result;
 
 /// Contract Deployment Stage
@@ -71,6 +69,6 @@ impl crate::Stage for Contracts {
 impl Contracts {
     /// Creates a new stage.
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 }

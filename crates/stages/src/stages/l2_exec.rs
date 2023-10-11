@@ -23,20 +23,19 @@ impl crate::Stage for Executor {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
-        let addresses = self
-            .addresses
-            .as_ref()
-            .ok_or(eyre::eyre!("missing addresses"))?;
+        // let addresses = self
+        //     .addresses
+        //     .as_ref()
+        //     .ok_or(eyre::eyre!("missing addresses"))?;
 
         let start_l2 = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "l2"])
             .env("PWD", docker_dir)
             .env("L2_CLIENT_CHOICE", &self.l2_client)
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         if !start_l2.status.success() {

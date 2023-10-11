@@ -23,8 +23,7 @@ impl crate::Stage for Batcher {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
         // let addresses = self
@@ -41,7 +40,7 @@ impl crate::Stage for Batcher {
             .as_ref()
             .ok_or(eyre::eyre!("missing genesis rollup file"))?;
 
-        let rollup_config = crate::json::read_json(&genesis_rollup_file)?;
+        let rollup_config = crate::json::read_json(genesis_rollup_file)?;
         let start_batcher = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "batcher"])
             .env("PWD", docker_dir)
@@ -50,7 +49,7 @@ impl crate::Stage for Batcher {
                 "SEQUENCER_BATCH_INBOX_ADDRESS",
                 rollup_config["batch_inbox_address"].to_string(),
             )
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         if !start_batcher.status.success() {

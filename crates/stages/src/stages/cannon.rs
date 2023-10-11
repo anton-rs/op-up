@@ -25,8 +25,6 @@ impl crate::Stage for Prestate {
         let l2_genesis_file = self
             .l2_genesis_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
             .ok_or(eyre::eyre!("missing l2 genesis file"))?;
 
         if l2_genesis_file.exists() {
@@ -35,14 +33,14 @@ impl crate::Stage for Prestate {
         }
 
         let op_program_bin = monorepo.join("op-program/bin");
-        if !std::fs::metadata(op_program_bin).is_err() {
+        if std::fs::metadata(op_program_bin).is_ok() {
             tracing::info!(target: "stages", "cannon prestate already generated");
             return Ok(());
         }
 
         let make = Command::new("make")
             .args(["cannon-prestate"])
-            .current_dir(&monorepo)
+            .current_dir(monorepo)
             .output()?;
 
         if !make.status.success() {
@@ -61,7 +59,9 @@ impl Prestate {
     pub fn new(monorepo: Option<PathBuf>, l2_genesis_file: Option<PathBuf>) -> Self {
         Self {
             monorepo: Some(monorepo.unwrap_or(Prestate::get_monorepo_dir_unsafe())),
-            l2_genesis_file: Some(l2_genesis_file.unwrap_or(Prestate::get_l2_genesis_file_unsafe())),
+            l2_genesis_file: Some(
+                l2_genesis_file.unwrap_or(Prestate::get_l2_genesis_file_unsafe()),
+            ),
         }
     }
 

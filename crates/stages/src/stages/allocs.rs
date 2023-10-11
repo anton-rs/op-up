@@ -25,8 +25,6 @@ impl crate::Stage for Allocs {
         let l2_genesis_file = self
             .l2_genesis_file
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
             .ok_or(eyre::eyre!("missing l2 genesis file"))?;
 
         if l2_genesis_file.exists() {
@@ -36,7 +34,7 @@ impl crate::Stage for Allocs {
 
         let allocs = Command::new("make")
             .args(["devnet-allocs"])
-            .current_dir(&monorepo)
+            .current_dir(monorepo)
             .output()?;
         if !allocs.status.success() {
             eyre::bail!(
@@ -47,7 +45,7 @@ impl crate::Stage for Allocs {
 
         let copy_addr = Command::new("cp")
             .args([".devnet/addresses.json", "../.devnet/"])
-            .current_dir(&monorepo)
+            .current_dir(monorepo)
             .output()?;
         if !copy_addr.status.success() {
             eyre::bail!(
@@ -58,7 +56,7 @@ impl crate::Stage for Allocs {
 
         let copy_allocs = Command::new("cp")
             .args([".devnet/allocs-l1.json", "../.devnet/"])
-            .current_dir(&monorepo)
+            .current_dir(monorepo)
             .output()?;
         if !copy_allocs.status.success() {
             eyre::bail!(

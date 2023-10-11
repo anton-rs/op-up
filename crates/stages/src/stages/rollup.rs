@@ -23,20 +23,19 @@ impl crate::Stage for Rollup {
         let docker_dir = self
             .docker_dir
             .as_ref()
-            .map(|p| p.to_str())
-            .flatten()
+            .and_then(|p| p.to_str())
             .ok_or(eyre::eyre!("missing dockerfile directory"))?;
 
-        let addresses = self
-            .addresses
-            .as_ref()
-            .ok_or(eyre::eyre!("missing addresses"))?;
+        // let addresses = self
+        //     .addresses
+        //     .as_ref()
+        //     .ok_or(eyre::eyre!("missing addresses"))?;
 
         let start_rollup = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
             .env("PWD", docker_dir)
             .env("ROLLUP_CLIENT_CHOICE", &self.rollup_client)
-            .current_dir(&docker_dir)
+            .current_dir(docker_dir)
             .output()?;
 
         if !start_rollup.status.success() {
