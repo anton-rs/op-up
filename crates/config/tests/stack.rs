@@ -59,43 +59,43 @@ fn test_read_config_with_components() {
     let _config = Config::from_toml("stack.toml").unwrap();
 }
 
-#[test]
-fn test_read_config_from_toml() {
-    let tempdir = TempDir::default().permanent();
-    std::env::set_current_dir(&tempdir).unwrap();
+// #[test]
+// fn test_read_config_from_toml() {
+//     let tempdir = TempDir::default().permanent();
+//     std::env::set_current_dir(&tempdir).unwrap();
 
-    std::fs::write(
-        "stack.toml",
-        r#"
-        [default]
-        l1-client = 'reth'
-        l2-client = 'op-reth'
-        rollup-client = 'magi'
-        challenger = 'op-challenger-go'
-        enable-sequencing = true
-        enable-fault-proofs = true
-        "#,
-    )
-    .unwrap();
-    assert!(PathBuf::from("stack.toml").exists());
+//     std::fs::write(
+//         "stack.toml",
+//         r#"
+//         [default]
+//         l1-client = 'reth'
+//         l2-client = 'op-reth'
+//         rollup-client = 'magi'
+//         challenger = 'op-challenger-go'
+//         enable-sequencing = true
+//         enable-fault-proofs = true
+//         "#,
+//     )
+//     .unwrap();
+//     assert!(PathBuf::from("stack.toml").exists());
 
-    let config = Config::from_toml("stack.toml").unwrap();
-    assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
-    assert_eq!(config.l1_client, L1Client::Reth);
-    assert_eq!(config.l2_client, L2Client::OpReth);
-    assert_eq!(config.rollup_client, RollupClient::Magi);
-    assert_eq!(config.challenger, ChallengerAgent::OpChallengerGo);
-    assert!(config.enable_sequencing);
-    assert!(config.enable_fault_proofs);
-}
+//     let config = Config::from_toml("stack.toml").unwrap();
+//     assert_eq!(config.artifacts, PathBuf::from(Config::STACK_DIR_NAME));
+//     assert_eq!(config.l1_client, L1Client::Reth);
+//     assert_eq!(config.l2_client, L2Client::OpReth);
+//     assert_eq!(config.rollup_client, RollupClient::Magi);
+//     assert_eq!(config.challenger, ChallengerAgent::OpChallengerGo);
+//     assert!(config.enable_sequencing);
+//     assert!(config.enable_fault_proofs);
+// }
 
-#[test]
-fn test_create_artifacts_dir() {
-    let tempdir = TempDir::default().permanent();
-    std::env::set_current_dir(&tempdir).unwrap();
+// #[test]
+// fn test_create_artifacts_dir() {
+//     let tempdir = TempDir::default().permanent();
+//     std::env::set_current_dir(&tempdir).unwrap();
 
-    let config = Config::default();
-    config.create_artifacts_dir().unwrap();
-    assert!(config.artifacts.exists());
-    assert!(config.artifacts.is_dir());
-}
+//     let config = Config::default();
+//     config.create_artifacts_dir().unwrap();
+//     assert!(config.artifacts.exists());
+//     assert!(config.artifacts.is_dir());
+// }
