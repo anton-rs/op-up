@@ -1,0 +1,24 @@
+[package]
+name = "op-composer"
+description = "A Docker container orchestration tool for OP stack components"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+eyre.workspace = true
+tracing.workspace = true
+serde.workspace = true
+
+tokio = { version = "1.11.0", features = ["full"] }
+futures-util = "0.3.28"
+bollard = "0.15.0"
+
+[dev-dependencies]
+tracing-subscriber.workspace = true
+pretty_assertions = "1"

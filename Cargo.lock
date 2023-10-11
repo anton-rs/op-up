@@ -1338,6 +1338,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
+name = "op-composer"
+version = "0.1.0"
+dependencies = [
+ "bollard",
+ "eyre",
+ "futures-util",
+ "pretty_assertions",
+ "serde",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "op-config"
 version = "0.1.0"
 dependencies = [

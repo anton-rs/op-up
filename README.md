@@ -59,13 +59,14 @@ as well as fault proof components._
 
 ## Usage
 
-First, make sure you have a few things installed.
+### Pre-requisites
 
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [Make](https://www.gnu.org/software/make/)
-- [jq](https://jqlang.github.io/jq/)
+First, install the following dependencies on your machine:
+
+- Rust: [Install guide](https://www.rust-lang.org/tools/install)
+- Docker: [Install guide](https://docs.docker.com/get-docker/)
+
+### Installation
 
 To get started with the interactive prompt, run the following commands:
 
