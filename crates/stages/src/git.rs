@@ -1,4 +1,3 @@
-use crate::commands::check_command;
 use eyre::Result;
 use std::{path::Path, process::Command};
 
@@ -12,8 +11,14 @@ pub(crate) fn git_clone(pwd: &Path, repo: &str) -> Result<()> {
         .arg(repo)
         .current_dir(pwd)
         .output()?;
-
-    check_command(out, &format!("Failed git clone of {} in {:?}", repo, pwd))?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to clone {} in {:?}: {}",
+            repo,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
 
     Ok(())
 }
