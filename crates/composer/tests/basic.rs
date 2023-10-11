@@ -11,28 +11,23 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
     let _ = tracing_subscriber::fmt::try_init();
 
     if let Ok(composer) = Composer::new() {
+        let image_name = "briceburg/ping-pong".to_string();
+
         // 1. Create the image
         let image_config = CreateImageOptions {
-            from_image: "alpine",
-            platform: "amd64",
+            from_image: image_name.as_str(),
             ..Default::default()
         };
 
-        let image_id = composer.create_image(image_config).await?;
-        println!("Created image: {}", image_id);
+        composer.create_image(image_config).await?;
 
         // 2. Create the container with the new image
         let container_config = ContainerConfig {
-            entrypoint: Some(vec![
-                "tail".to_string(),
-                "-f".to_string(),
-                "/dev/null".to_string(),
-            ]),
-            exposed_ports: Some(HashMap::<_, _>::from_iter([
-                ("8545".to_string(), HashMap::new()),
-                ("6060".to_string(), HashMap::new()),
-            ])),
-            image: Some(image_id),
+            exposed_ports: Some(HashMap::<_, _>::from_iter([(
+                "7777".to_string(),
+                HashMap::new(),
+            )])),
+            image: Some(image_name),
             ..Default::default()
         };
 
@@ -52,6 +47,7 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
         let cmd_output = composer
             .remote_exec(&container.id, vec!["ls", "-la"])
             .await?;
+
         println!("Command output: {:?}", cmd_output);
 
         // 5. Stop running container

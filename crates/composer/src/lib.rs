@@ -36,7 +36,7 @@ impl Composer {
     pub fn new() -> Result<Self> {
         let daemon = Docker::connect_with_local_defaults()?;
 
-        tracing::debug!("Successfully connected to Docker daemon");
+        tracing::debug!(target: "composer", "Successfully connected to Docker daemon");
         Ok(Self { daemon })
     }
 
@@ -76,14 +76,21 @@ impl Composer {
         let res = self
             .daemon
             .create_image(Some(opts), None, None)
+            .map(|res| {
+                res.map(|info| {
+                    tracing::trace!(target: "composer", "image progress: {:?}", info);
+                    info
+                })
+            })
             .try_collect::<Vec<_>>()
             .await
             .map_err(|e| {
-                println!("Error creating docker image: {:?}", e);
+                tracing::error!(target: "composer", "Error creating docker image: {:?}", e);
                 e
             })?;
 
-        tracing::debug!("Created docker image: {:?}", res);
+        println!("res: {:?}", res);
+        tracing::debug!(target: "composer", "Created docker image: {:?}", res);
 
         match res.get(0) {
             Some(info) => match info.id.as_ref() {
@@ -116,7 +123,7 @@ impl Composer {
             .create_container(Some(create_options), config.into())
             .await?;
 
-        tracing::debug!("Created docker container {} with ID: {}", name, res.id);
+        tracing::debug!(target: "composer", "Created docker container {} with ID: {}", name, res.id);
 
         Ok(res)
     }
@@ -127,7 +134,7 @@ impl Composer {
             .start_container(id, None::<StartContainerOptions<&str>>)
             .await?;
 
-        tracing::debug!("Started docker container with ID: {}", id);
+        tracing::debug!(target: "composer", "Started docker container with ID: {}", id);
         Ok(())
     }
 
@@ -137,7 +144,7 @@ impl Composer {
             .stop_container(id, None::<StopContainerOptions>)
             .await?;
 
-        tracing::debug!("Stopped docker container with ID: {}", id);
+        tracing::debug!(target: "composer", "Stopped docker container with ID: {}", id);
         Ok(())
     }
 
@@ -147,7 +154,7 @@ impl Composer {
             .remove_container(id, None::<RemoveContainerOptions>)
             .await?;
 
-        tracing::debug!("Removed docker container with ID: {}", id);
+        tracing::debug!(target: "composer", "Removed docker container with ID: {}", id);
         Ok(())
     }
 
@@ -161,14 +168,14 @@ impl Composer {
             .map(|id| id.as_str())
             .collect::<Vec<_>>();
 
-        tracing::info!("Stopping docker containers: {:?}", ids);
+        tracing::info!(target: "composer", "Stopping docker containers: {:?}", ids);
 
         for id in ids {
             self.daemon
                 .stop_container(id, None::<StopContainerOptions>)
                 .await?;
 
-            tracing::debug!("Successfully stopped docker container: {}", id);
+            tracing::debug!(target: "composer", "Successfully stopped docker container: {}", id);
         }
 
         Ok(())
@@ -189,7 +196,7 @@ impl Composer {
                 .remove_container(id, None::<RemoveContainerOptions>)
                 .await?;
 
-            tracing::debug!("Successfully removed docker container: {}", id);
+            tracing::debug!(target: "composer", "Successfully removed docker container: {}", id);
         }
 
         Ok(())
@@ -206,18 +213,23 @@ impl Composer {
 
         let exec = self.daemon.create_exec(id, exec_options).await?;
 
-        let mut result: Vec<LogOutput> = Vec::new();
         match self.daemon.start_exec(&exec.id, None).await? {
-            StartExecResults::Attached { mut output, .. } => {
-                while let Some(Ok(msg)) = output.next().await {
-                    result.push(msg);
-                }
-            }
+            StartExecResults::Attached { output, .. } => Ok(output
+                .filter_map(|res| async {
+                    match res {
+                        Ok(output) => Some(output),
+                        Err(e) => {
+                            tracing::error!(target: "composer", "Error executing remote command: {:?}", e);
+                            None
+                        },
+                    }
+                })
+                .collect::<Vec<_>>()
+                .await),
+
             StartExecResults::Detached => {
-                unreachable!("Detached docker exec result is unsupported")
+                bail!("Detached exec is not supported")
             }
         }
-
-        Ok(result)
     }
 }
