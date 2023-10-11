@@ -31,6 +31,7 @@ impl crate::Stage for Rollup {
         //     .as_ref()
         //     .ok_or(eyre::eyre!("missing addresses"))?;
 
+        tracing::info!(target: "stages", "Starting rollup client {}", &self.rollup_client);
         let start_rollup = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
             .env("PWD", docker_dir)
