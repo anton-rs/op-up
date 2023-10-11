@@ -96,7 +96,7 @@ services:
       - "7302:7300"
     environment:
       OP_PROPOSER_L1_ETH_RPC: http://l1:8545
-      OP_PROPOSER_ROLLUP_RPC: http://op-node:8545
+      OP_PROPOSER_ROLLUP_RPC: http://node:8545
       OP_PROPOSER_POLL_INTERVAL: 1s
       OP_PROPOSER_NUM_CONFIRMATIONS: 1
       OP_PROPOSER_MNEMONIC: test test test test test test test test test test test junk
@@ -105,7 +105,6 @@ services:
       OP_PROPOSER_PPROF_ENABLED: "true"
       OP_PROPOSER_METRICS_ENABLED: "true"
       OP_PROPOSER_ALLOW_NON_FINALIZED: "true"
-
   batcher:
     build:
       context: ../optimism
@@ -117,7 +116,7 @@ services:
     environment:
       OP_BATCHER_L1_ETH_RPC: http://l1:8545
       OP_BATCHER_L2_ETH_RPC: http://l2:8545
-      OP_BATCHER_ROLLUP_RPC: http://rollup-client:8545
+      OP_BATCHER_ROLLUP_RPC: http://node:8545
       OP_BATCHER_MAX_CHANNEL_DURATION: 1
       OP_BATCHER_SUB_SAFETY_MARGIN: 4 # SWS is 15, ChannelTimeout is 40
       OP_BATCHER_POLL_INTERVAL: 1s

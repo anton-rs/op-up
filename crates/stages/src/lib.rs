@@ -103,7 +103,6 @@ impl Stages<'_> {
         // Step 1.
         // Create prestate and allocs
 
-        // TODO: is this condition correct?
         if !genesis_l2_file.exists() {
             tracing::info!(target: "opup", "Making prestate and allocs...");
             let bin_dir = op_monorepo_dir.join("op-program/bin");
@@ -114,7 +113,7 @@ impl Stages<'_> {
                     .output()?;
                 check_command(make_command, "Failed to do cannon prestate")?;
             }
-            // TODO: check is allocs here actually do what we want
+
             let allocs = Command::new("make")
                 .args(["devnet-allocs"])
                 .current_dir(&op_monorepo_dir)
@@ -176,7 +175,8 @@ impl Stages<'_> {
 
         check_command(start_l1, "Failed to start L1 execution client")?;
         net::wait_up(L1_PORT, 10, 1)?;
-        // TODO: is this sleep necessary?
+
+        // block entire thread, because we don't have tokio, or any similar dependency
         std::thread::sleep(std::time::Duration::from_secs(10));
 
         // Step 5.
@@ -221,13 +221,19 @@ impl Stages<'_> {
 
         tracing::info!(target: "opup", "Bringing up everything else...");
         let rollup_config = json::read_json(&genesis_rollup_file)?;
+        let l2oo_address = addresses["L2OutputOracleProxy"]
+            .as_str()
+            .unwrap_or_default();
+        let sequencer_batch_inbox_address = rollup_config["batch_inbox_address"]
+            .as_str()
+            .unwrap_or_default();
         let start_rollup = Command::new("docker-compose")
             .args(["up", "-d", "node", "proposer", "batcher"])
             .env("PWD", docker_dir.to_str().unwrap())
-            .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
+            .env("L2OO_ADDRESS", l2oo_address)
             .env(
                 "SEQUENCER_BATCH_INBOX_ADDRESS",
-                rollup_config["batch_inbox_address"].to_string(),
+                sequencer_batch_inbox_address,
             )
             .current_dir(&docker_dir)
             .output()?;

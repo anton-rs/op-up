@@ -99,6 +99,7 @@ pub fn dev_accounts() -> GenesisAlloc {
 pub fn genesis_template(timestamp: u64) -> Option<Genesis> {
     let mut genesis_allocations = genesis_allocations();
     genesis_allocations.extend(dev_accounts());
+    // It's neccesary here, something wrong with the lazy_static initialization
     Lazy::<Genesis>::force(&GENESIS_TEMPLATE);
     let genesis = Lazy::get(&GENESIS_TEMPLATE);
     genesis.map(|genesis| {
