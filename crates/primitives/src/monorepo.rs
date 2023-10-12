@@ -10,6 +10,17 @@ pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git
 /// The monorepo directory.
 pub const MONOREPO_DIR: &str = "optimism";
 
+/// A macro to convert a [PathBuf] into a [Result<String>],
+/// returning an error if the path cannot be converted to a string.
+#[macro_export]
+macro_rules! path_to_str {
+    ($path:expr) => {
+        $path
+            .to_str()
+            .ok_or_else(|| eyre::eyre!("Failed to convert path to string: {:?}", $path))
+    };
+}
+
 /// The Optimism Monorepo.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Monorepo {
@@ -39,9 +50,54 @@ impl Monorepo {
         self.path().join(".devnet")
     }
 
+    /// Returns the L1 genesis file.
+    pub fn l1_genesis(&self) -> PathBuf {
+        self.devnet().join("genesis-l1.json")
+    }
+
     /// Returns the L2 genesis file.
-    pub fn l2_genesis_file(&self) -> PathBuf {
-        self.devnet().join("l2-genesis.json")
+    pub fn l2_genesis(&self) -> PathBuf {
+        self.devnet().join("genesis-l2.json")
+    }
+
+    /// Contracts directory.
+    pub fn contracts(&self) -> PathBuf {
+        self.path().join("packages/contracts-bedrock")
+    }
+
+    /// Deploy config file.
+    pub fn deploy_config(&self) -> PathBuf {
+        self.contracts().join("deploy-config/devnetL1.json")
+    }
+
+    /// Deployments directory.
+    pub fn deployments(&self) -> PathBuf {
+        self.contracts().join("deployments")
+    }
+
+    /// Devnet Deployments directory.
+    pub fn devnet_deploys(&self) -> PathBuf {
+        self.deployments().join("devnetL1")
+    }
+
+    /// Allocs file.
+    pub fn allocs(&self) -> PathBuf {
+        self.devnet().join("allocs-l1.json")
+    }
+
+    /// Addresses json file (the l1 deployments).
+    pub fn addresses_json(&self) -> PathBuf {
+        self.devnet().join("addresses.json")
+    }
+
+    /// Returns the op node directory.
+    pub fn op_node_dir(&self) -> PathBuf {
+        self.path().join("op-node")
+    }
+
+    /// Returns the genesis rollup file.
+    pub fn genesis_rollup(&self) -> PathBuf {
+        self.devnet().join("rollup.json")
     }
 }
 

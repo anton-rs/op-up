@@ -46,27 +46,26 @@ impl Stages<'_> {
         let challenge_agent = self.config.challenger.to_string();
         vec![
             Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
-            Box::new(directories::Directories::new(monorepo.clone())),
-            Box::new(cannon::Prestate::new(None, None)),
-            Box::new(allocs::Allocs::new(monorepo.clone())),
-            Box::new(deploy_config::DeployConfig::new(None, genesis_timestamp)),
-            Box::new(l1_genesis::L1Genesis::new(
-                None,
-                None,
-                None,
-                None,
-                None,
+            Box::new(directories::Directories::new(Rc::clone(&monorepo))),
+            Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
+            Box::new(allocs::Allocs::new(Rc::clone(&monorepo))),
+            Box::new(deploy_config::DeployConfig::new(
+                Rc::clone(&monorepo),
                 genesis_timestamp,
             )),
-            Box::new(l1_exec::Executor::new(None, l1_client)),
-            Box::new(l2_genesis::L2Genesis::new(None, None, None, None, None)),
+            Box::new(l1_genesis::L1Genesis::new(
+                Rc::clone(&monorepo),
+                genesis_timestamp,
+            )),
+            Box::new(l1_exec::Executor::new(l1_client)),
+            Box::new(l2_genesis::L2Genesis::new(Rc::clone(&monorepo))),
             Box::new(contracts::Contracts::new()),
-            Box::new(l2_exec::Executor::new(None, l2_client)),
-            Box::new(rollup::Rollup::new(None, rollup_client)),
-            Box::new(proposer::Proposer::new(None)),
-            Box::new(batcher::Batcher::new(None, None)),
-            Box::new(challenger::Challenger::new(None, challenge_agent)),
-            Box::new(stateviz::Stateviz::new(None)),
+            Box::new(l2_exec::Executor::new(l2_client)),
+            Box::new(rollup::Rollup::new(rollup_client)),
+            Box::new(proposer::Proposer::new()),
+            Box::new(batcher::Batcher::new(Rc::clone(&monorepo))),
+            Box::new(challenger::Challenger::new(challenge_agent)),
+            Box::new(stateviz::Stateviz::new()),
         ]
     }
 

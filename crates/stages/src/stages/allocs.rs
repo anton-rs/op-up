@@ -1,9 +1,7 @@
+use eyre::Result;
+use op_primitives::Monorepo;
 use std::process::Command;
 use std::rc::Rc;
-
-use eyre::Result;
-
-use op_primitives::Monorepo;
 
 /// Devnet Allocs Stage
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -17,7 +15,7 @@ impl crate::Stage for Allocs {
     fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing allocs stage");
 
-        let l2_genesis_file = self.monorepo.l2_genesis_file();
+        let l2_genesis_file = self.monorepo.l2_genesis();
         if l2_genesis_file.exists() {
             tracing::info!(target: "stages", "l2 genesis file already found");
             return Ok(());
