@@ -1,4 +1,3 @@
-#![allow(missing_docs)]
 use eyre::Result;
 use std::rc::Rc;
 
@@ -6,23 +5,38 @@ use op_config::Config;
 use op_primitives::genesis;
 use op_primitives::{Artifacts, Monorepo};
 
+#[doc(hidden)]
 pub mod allocs;
+#[doc(hidden)]
 pub mod artifacts;
+#[doc(hidden)]
 pub mod cannon;
+#[doc(hidden)]
 pub mod contracts;
+#[doc(hidden)]
 pub mod deploy_config;
+#[doc(hidden)]
 pub mod directories;
 
+#[doc(hidden)]
 pub mod l1_exec;
+#[doc(hidden)]
 pub mod l1_genesis;
 
+#[doc(hidden)]
 pub mod l2_exec;
+#[doc(hidden)]
 pub mod l2_genesis;
 
+#[doc(hidden)]
 pub mod batcher;
+#[doc(hidden)]
 pub mod challenger;
+#[doc(hidden)]
 pub mod proposer;
+#[doc(hidden)]
 pub mod rollup;
+#[doc(hidden)]
 pub mod stateviz;
 
 /// Stages
