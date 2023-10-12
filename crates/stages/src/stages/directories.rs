@@ -1,7 +1,7 @@
 use eyre::Result;
 use std::rc::Rc;
 
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
 
 /// Directories Stage
 ///
@@ -11,21 +11,25 @@ use op_primitives::Monorepo;
 /// pipeline.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Directories {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
+    artifacts: Rc<Artifacts>,
+    monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Directories {
     /// Executes the [Directories] stage.
     fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing directories stage");
+        self.artifacts.create()?;
         self.monorepo.git_clone()
     }
 }
 
 impl Directories {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>) -> Self {
-        Self { monorepo }
+    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+        Self {
+            artifacts,
+            monorepo,
+        }
     }
 }

@@ -6,8 +6,7 @@ use std::rc::Rc;
 /// L2 Genesis Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct L2Genesis {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
+    monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for L2Genesis {

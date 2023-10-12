@@ -33,6 +33,21 @@ impl Artifacts {
         self.pwd.as_path()
     }
 
+    /// Returns the L1 deployments json file (addresses.json) path for the file in the artifacts
+    /// directory.
+    pub fn l1_deployments(&self) -> PathBuf {
+        self.path().join("addresses.json")
+    }
+
+    /// Create the artifacts directory if it does not exist.
+    pub fn create(&self) -> Result<()> {
+        if !self.pwd.exists() {
+            tracing::info!(target: "stages", "Creating artifacts directory: {:?}", self.pwd);
+            std::fs::create_dir_all(&self.pwd)?;
+        }
+        Ok(())
+    }
+
     /// Copies the contents of a given [Path] into the artifacts directory.
     pub fn copy_from(&self, p: &Path) -> Result<()> {
         let p = p.canonicalize()?;

@@ -8,8 +8,6 @@ use op_primitives::{Artifacts, Monorepo};
 #[doc(hidden)]
 pub mod allocs;
 #[doc(hidden)]
-pub mod artifacts;
-#[doc(hidden)]
 pub mod cannon;
 #[doc(hidden)]
 pub mod contracts;
@@ -63,8 +61,10 @@ impl Stages<'_> {
         let rollup_client = self.config.rollup_client.to_string();
         let challenge_agent = self.config.challenger.to_string();
         vec![
-            Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
-            Box::new(directories::Directories::new(Rc::clone(&monorepo))),
+            Box::new(directories::Directories::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
             Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
             Box::new(allocs::Allocs::new(
                 Rc::clone(&artifacts),
@@ -83,10 +83,16 @@ impl Stages<'_> {
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(l2_client)),
             Box::new(rollup::Rollup::new(rollup_client)),
-            Box::new(proposer::Proposer::new()),
-            Box::new(batcher::Batcher::new(Rc::clone(&monorepo))),
-            Box::new(challenger::Challenger::new(challenge_agent)),
-            Box::new(stateviz::Stateviz::new()),
+            Box::new(proposer::Proposer::new(Rc::clone(&artifacts))),
+            Box::new(batcher::Batcher::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
+            Box::new(challenger::Challenger::new(
+                Rc::clone(&artifacts),
+                challenge_agent,
+            )),
+            Box::new(stateviz::Stateviz::new(Rc::clone(&artifacts))),
         ]
     }
 

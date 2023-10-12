@@ -1,9 +1,13 @@
 use eyre::Result;
+use op_primitives::Artifacts;
 use std::process::Command;
+use std::rc::Rc;
 
 /// Stateviz
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct Stateviz;
+pub struct Stateviz {
+    artifacts: Rc<Artifacts>,
+}
 
 impl crate::Stage for Stateviz {
     /// Executes the [Stateviz] stage.
@@ -15,9 +19,8 @@ impl crate::Stage for Stateviz {
         let proj_root = project_root::get_project_root()?;
         let docker_dir = proj_root.as_path().join("docker");
 
-        // todo: fix this to use the stack config artifacts dir instead of .devnet
-        let addresses_json_file = proj_root.as_path().join(".devnet").join("addresses.json");
-        let addresses = crate::json::read_json(&addresses_json_file)?;
+        let addresses_json = self.artifacts.l1_deployments();
+        let addresses = crate::json::read_json(&addresses_json)?;
 
         let start_stateviz = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "stateviz"])
@@ -40,7 +43,7 @@ impl crate::Stage for Stateviz {
 
 impl Stateviz {
     /// Creates a new stateviz stage,.
-    pub fn new() -> Self {
-        Self
+    pub fn new(artifacts: Rc<Artifacts>) -> Self {
+        Self { artifacts }
     }
 }

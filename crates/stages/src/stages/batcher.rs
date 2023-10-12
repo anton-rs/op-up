@@ -1,13 +1,13 @@
 use eyre::Result;
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
 use std::process::Command;
 use std::rc::Rc;
 
 /// Batcher Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Batcher {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
+    artifacts: Rc<Artifacts>,
+    monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Batcher {
@@ -20,9 +20,8 @@ impl crate::Stage for Batcher {
         let proj_root = project_root::get_project_root()?;
         let docker_dir = proj_root.as_path().join("docker");
 
-        // todo: fix this to use the stack config artifacts dir instead of .devnet
-        let addresses_json_file = proj_root.as_path().join(".devnet").join("addresses.json");
-        let addresses = crate::json::read_json(&addresses_json_file)?;
+        let addresses_json = self.artifacts.l1_deployments();
+        let addresses = crate::json::read_json(&addresses_json)?;
 
         let genesis_rollup_file = self.monorepo.genesis_rollup();
         let rollup_config = crate::json::read_json(&genesis_rollup_file)?;
@@ -50,7 +49,10 @@ impl crate::Stage for Batcher {
 
 impl Batcher {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>) -> Self {
-        Self { monorepo }
+    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+        Self {
+            artifacts,
+            monorepo,
+        }
     }
 }
