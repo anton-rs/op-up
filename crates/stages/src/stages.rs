@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
 use eyre::Result;
+use std::rc::Rc;
 
 use op_config::Config;
 use op_primitives::genesis;
@@ -37,7 +38,7 @@ pub struct Stages<'a> {
 
 impl Stages<'_> {
     /// Build the default docker-based stages.
-    pub fn docker(&self, monorepo: Monorepo) -> Vec<Box<dyn crate::Stage>> {
+    pub fn docker(&self, monorepo: Rc<Monorepo>) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
         let l1_client = self.config.l1_client.to_string();
         let l2_client = self.config.l2_client.to_string();
@@ -45,9 +46,9 @@ impl Stages<'_> {
         let challenge_agent = self.config.challenger.to_string();
         vec![
             Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
-            Box::new(directories::Directories::new(monorepo)),
+            Box::new(directories::Directories::new(monorepo.clone())),
             Box::new(cannon::Prestate::new(None, None)),
-            Box::new(allocs::Allocs::new(None, None)),
+            Box::new(allocs::Allocs::new(monorepo.clone())),
             Box::new(deploy_config::DeployConfig::new(None, genesis_timestamp)),
             Box::new(l1_genesis::L1Genesis::new(
                 None,
@@ -73,7 +74,7 @@ impl Stages<'_> {
     pub async fn execute(&self) -> eyre::Result<()> {
         tracing::debug!(target: "stages", "executing stages");
 
-        let monorepo = Monorepo::new()?;
+        let monorepo = Rc::new(Monorepo::new()?);
 
         let docker_stages = self.docker(monorepo);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);

@@ -1,4 +1,7 @@
 use eyre::Result;
+use std::rc::Rc;
+
+use op_primitives::Monorepo;
 
 /// Directories Stage
 ///
@@ -9,7 +12,7 @@ use eyre::Result;
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Directories {
     /// The optimism monorepo.
-    pub monorepo: op_primitives::Monorepo,
+    pub monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Directories {
@@ -22,7 +25,7 @@ impl crate::Stage for Directories {
 
 impl Directories {
     /// Creates a new stage.
-    pub fn new(monorepo: op_primitives::Monorepo) -> Self {
+    pub fn new(monorepo: Rc<Monorepo>) -> Self {
         Self { monorepo }
     }
 }

@@ -33,6 +33,16 @@ impl Monorepo {
     pub fn path(&self) -> PathBuf {
         self.pwd.join(MONOREPO_DIR)
     }
+
+    /// Returns the devnet artifacts directory.
+    pub fn devnet(&self) -> PathBuf {
+        self.path().join(".devnet")
+    }
+
+    /// Returns the L2 genesis file.
+    pub fn l2_genesis_file(&self) -> PathBuf {
+        self.devnet().join("l2-genesis.json")
+    }
 }
 
 impl Monorepo {
