@@ -24,3 +24,5 @@ ethers-core.workspace = true
 
 hex-literal.workspace = true
 once_cell.workspace = true
+
+project-root = "0.2.2"

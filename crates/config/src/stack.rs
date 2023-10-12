@@ -21,9 +21,6 @@ use crate::providers::{
 use crate::root::RootPath;
 // use crate::stages::StageProvider;
 
-/// Optimism monorepo git url.
-pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
-
 /// L1 node url.
 pub const L1_URL: &str = "http://localhost:8545";
 

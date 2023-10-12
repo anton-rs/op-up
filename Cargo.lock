@@ -1403,6 +1403,7 @@ dependencies = [
  "hex-literal",
  "inquire",
  "once_cell",
+ "project-root",
  "serde",
  "serde_json",
  "strum",
