@@ -4,6 +4,7 @@ use std::process::Command;
 /// Rollup Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Rollup {
+    rollup_port: Option<u16>,
     rollup_client: String,
 }
 
@@ -32,15 +33,17 @@ impl crate::Stage for Rollup {
             );
         }
 
-        crate::net::wait_up(op_config::ROLLUP_PORT, 30, 1)?;
-
-        Ok(())
+        let rollup_port = self.rollup_port.unwrap_or(op_config::ROLLUP_PORT);
+        crate::net::wait_up(rollup_port, 30, 1)
     }
 }
 
 impl Rollup {
     /// Creates a new stage.
-    pub fn new(rollup_client: String) -> Self {
-        Self { rollup_client }
+    pub fn new(rollup_port: Option<u16>, rollup_client: String) -> Self {
+        Self {
+            rollup_port,
+            rollup_client,
+        }
     }
 }

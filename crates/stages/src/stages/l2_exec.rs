@@ -4,6 +4,7 @@ use std::process::Command;
 /// Layer 2 Execution Client Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Executor {
+    l2_port: Option<u16>,
     l2_client: String,
 }
 
@@ -31,16 +32,14 @@ impl crate::Stage for Executor {
             );
         }
 
-        // todo: use a configured port here
-        crate::net::wait_up(op_config::L2_PORT, 10, 1)?;
-
-        Ok(())
+        let l2_port = self.l2_port.unwrap_or(op_config::L2_PORT);
+        crate::net::wait_up(l2_port, 10, 1)
     }
 }
 
 impl Executor {
     /// Creates a new stage.
-    pub fn new(l2_client: String) -> Self {
-        Self { l2_client }
+    pub fn new(l2_port: Option<u16>, l2_client: String) -> Self {
+        Self { l2_port, l2_client }
     }
 }

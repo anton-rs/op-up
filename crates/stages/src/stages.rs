@@ -78,11 +78,23 @@ impl Stages<'_> {
                 Rc::clone(&monorepo),
                 genesis_timestamp,
             )),
-            Box::new(l1_exec::Executor::new(l1_client)),
-            Box::new(l2_genesis::L2Genesis::new(Rc::clone(&monorepo))),
+            Box::new(l1_exec::Executor::new(
+                self.config.l1_client_port,
+                l1_client,
+            )),
+            Box::new(l2_genesis::L2Genesis::new(
+                self.config.l1_client_url.clone(),
+                Rc::clone(&monorepo),
+            )),
             Box::new(contracts::Contracts::new()),
-            Box::new(l2_exec::Executor::new(l2_client)),
-            Box::new(rollup::Rollup::new(rollup_client)),
+            Box::new(l2_exec::Executor::new(
+                self.config.l2_client_port,
+                l2_client,
+            )),
+            Box::new(rollup::Rollup::new(
+                self.config.rollup_client_port,
+                rollup_client,
+            )),
             Box::new(proposer::Proposer::new(Rc::clone(&artifacts))),
             Box::new(batcher::Batcher::new(
                 Rc::clone(&artifacts),
