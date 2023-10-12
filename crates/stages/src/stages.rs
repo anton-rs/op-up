@@ -85,12 +85,17 @@ impl Stages<'_> {
 
     /// Print the stack result to stdout.
     pub fn output(&self) -> Result<()> {
-        // todo: get the actual stage output and print it here instead of using the defaults
+        let l1_url = self.config.l1_client_url.clone();
+        let l1_url = l1_url.unwrap_or(op_config::L1_URL.to_string());
+        let l2_url = self.config.l2_client_url.clone();
+        let l2_url = l2_url.unwrap_or(op_config::L2_URL.to_string());
+        let rollup_url = self.config.rollup_client_url.clone();
+        let rollup_url = rollup_url.unwrap_or(op_config::ROLLUP_URL.to_string());
         tracing::info!(target: "stages", "\n--------------------------");
         tracing::info!(target: "stages", "Devnet built successfully!");
-        tracing::info!(target: "stages", "L1 endpoint: {}", op_config::L1_URL);
-        tracing::info!(target: "stages", "L2 endpoint: {}", op_config::L2_URL);
-        tracing::info!(target: "stages", "Rollup node endpoint: {}", op_config::ROLLUP_URL);
+        tracing::info!(target: "stages", "L1 endpoint: {}", l1_url);
+        tracing::info!(target: "stages", "L2 endpoint: {}", l2_url);
+        tracing::info!(target: "stages", "Rollup node endpoint: {}", rollup_url);
         tracing::info!(target: "stages", "--------------------------\n");
         Ok(())
     }

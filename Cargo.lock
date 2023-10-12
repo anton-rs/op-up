@@ -1414,6 +1414,7 @@ name = "op-stages"
 version = "0.1.0"
 dependencies = [
  "eyre",
+ "op-composer",
  "op-config",
  "op-contracts",
  "op-primitives",
