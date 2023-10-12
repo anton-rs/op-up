@@ -1,15 +1,13 @@
-use std::path::PathBuf;
-use std::process::Command;
-
 use eyre::Result;
+use op_primitives::Monorepo;
+use std::process::Command;
+use std::rc::Rc;
 
 /// Cannon Prestate Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Prestate {
-    /// The path to the monorepo.
-    pub monorepo: Option<PathBuf>,
-    /// The l2 genesis file.
-    pub l2_genesis_file: Option<PathBuf>,
+    /// The optimism monorepo.
+    pub monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Prestate {
@@ -17,15 +15,8 @@ impl crate::Stage for Prestate {
     fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing cannon prestate stage");
 
-        let monorepo = self
-            .monorepo
-            .as_ref()
-            .ok_or(eyre::eyre!("missing monorepo directory"))?;
-
-        let l2_genesis_file = self
-            .l2_genesis_file
-            .as_ref()
-            .ok_or(eyre::eyre!("missing l2 genesis file"))?;
+        let monorepo = self.monorepo.path();
+        let l2_genesis_file = self.monorepo.l2_genesis();
 
         if l2_genesis_file.exists() {
             tracing::info!(target: "stages", "l2 genesis file already found");
@@ -55,37 +46,8 @@ impl crate::Stage for Prestate {
 }
 
 impl Prestate {
-    /// Creates a new prestate stage.
-    pub fn new(monorepo: Option<PathBuf>, l2_genesis_file: Option<PathBuf>) -> Self {
-        Self {
-            monorepo: Some(monorepo.unwrap_or(Prestate::get_monorepo_dir_unsafe())),
-            l2_genesis_file: Some(
-                l2_genesis_file.unwrap_or(Prestate::get_l2_genesis_file_unsafe()),
-            ),
-        }
-    }
-
-    /// Returns a [PathBuf] for the monorepo directory.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the [project_root::get_project_root] function call fails to return a valid
-    /// project root [PathBuf].
-    pub fn get_monorepo_dir_unsafe() -> PathBuf {
-        let proj_root = project_root::get_project_root().expect("Failed to get project root");
-        let op_up_dir = proj_root.as_path();
-        op_up_dir.join("optimism")
-    }
-
-    /// Returns a [PathBuf] for the l2 genesis file.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the [project_root::get_project_root] function call fails to return a valid
-    /// project root [PathBuf].
-    pub fn get_l2_genesis_file_unsafe() -> PathBuf {
-        let proj_root = project_root::get_project_root().expect("Failed to get project root");
-        let op_up_dir = proj_root.as_path();
-        op_up_dir.join(".devnet").join("genesis-l2.json")
+    /// Creates a new stage.
+    pub fn new(monorepo: Rc<Monorepo>) -> Self {
+        Self { monorepo }
     }
 }

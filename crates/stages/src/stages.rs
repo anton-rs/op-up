@@ -1,8 +1,10 @@
 #![allow(missing_docs)]
 use eyre::Result;
+use std::rc::Rc;
 
 use op_config::Config;
 use op_primitives::genesis;
+use op_primitives::Monorepo;
 
 pub mod allocs;
 pub mod artifacts;
@@ -36,7 +38,7 @@ pub struct Stages<'a> {
 
 impl Stages<'_> {
     /// Build the default docker-based stages.
-    pub fn docker(&self) -> Vec<Box<dyn crate::Stage>> {
+    pub fn docker(&self, monorepo: Rc<Monorepo>) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
         let l1_client = self.config.l1_client.to_string();
         let l2_client = self.config.l2_client.to_string();
@@ -44,27 +46,26 @@ impl Stages<'_> {
         let challenge_agent = self.config.challenger.to_string();
         vec![
             Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
-            Box::new(directories::Directories::new(None)),
-            Box::new(cannon::Prestate::new(None, None)),
-            Box::new(allocs::Allocs::new(None, None)),
-            Box::new(deploy_config::DeployConfig::new(None, genesis_timestamp)),
-            Box::new(l1_genesis::L1Genesis::new(
-                None,
-                None,
-                None,
-                None,
-                None,
+            Box::new(directories::Directories::new(Rc::clone(&monorepo))),
+            Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
+            Box::new(allocs::Allocs::new(Rc::clone(&monorepo))),
+            Box::new(deploy_config::DeployConfig::new(
+                Rc::clone(&monorepo),
                 genesis_timestamp,
             )),
-            Box::new(l1_exec::Executor::new(None, l1_client)),
-            Box::new(l2_genesis::L2Genesis::new(None, None, None, None, None)),
+            Box::new(l1_genesis::L1Genesis::new(
+                Rc::clone(&monorepo),
+                genesis_timestamp,
+            )),
+            Box::new(l1_exec::Executor::new(l1_client)),
+            Box::new(l2_genesis::L2Genesis::new(Rc::clone(&monorepo))),
             Box::new(contracts::Contracts::new()),
-            Box::new(l2_exec::Executor::new(None, l2_client)),
-            Box::new(rollup::Rollup::new(None, rollup_client)),
-            Box::new(proposer::Proposer::new(None)),
-            Box::new(batcher::Batcher::new(None, None)),
-            Box::new(challenger::Challenger::new(None, challenge_agent)),
-            Box::new(stateviz::Stateviz::new(None)),
+            Box::new(l2_exec::Executor::new(l2_client)),
+            Box::new(rollup::Rollup::new(rollup_client)),
+            Box::new(proposer::Proposer::new()),
+            Box::new(batcher::Batcher::new(Rc::clone(&monorepo))),
+            Box::new(challenger::Challenger::new(challenge_agent)),
+            Box::new(stateviz::Stateviz::new()),
         ]
     }
 
@@ -72,7 +73,9 @@ impl Stages<'_> {
     pub async fn execute(&self) -> eyre::Result<()> {
         tracing::debug!(target: "stages", "executing stages");
 
-        let docker_stages = self.docker();
+        let monorepo = Rc::new(Monorepo::new()?);
+
+        let docker_stages = self.docker(monorepo);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
         for stage in inner {
