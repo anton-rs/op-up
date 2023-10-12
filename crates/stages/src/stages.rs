@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use op_config::Config;
 use op_primitives::genesis;
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
 
 pub mod allocs;
 pub mod artifacts;
@@ -38,7 +38,11 @@ pub struct Stages<'a> {
 
 impl Stages<'_> {
     /// Build the default docker-based stages.
-    pub fn docker(&self, monorepo: Rc<Monorepo>) -> Vec<Box<dyn crate::Stage>> {
+    pub fn docker(
+        &self,
+        artifacts: Rc<Artifacts>,
+        monorepo: Rc<Monorepo>,
+    ) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
         let l1_client = self.config.l1_client.to_string();
         let l2_client = self.config.l2_client.to_string();
@@ -48,7 +52,10 @@ impl Stages<'_> {
             Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
             Box::new(directories::Directories::new(Rc::clone(&monorepo))),
             Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
-            Box::new(allocs::Allocs::new(Rc::clone(&monorepo))),
+            Box::new(allocs::Allocs::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
             Box::new(deploy_config::DeployConfig::new(
                 Rc::clone(&monorepo),
                 genesis_timestamp,
@@ -75,7 +82,14 @@ impl Stages<'_> {
 
         let monorepo = Rc::new(Monorepo::new()?);
 
-        let docker_stages = self.docker(monorepo);
+        // todo: fix this to use the stack config once the artifacts directory is configurable in
+        // docker containers.
+        let artifacts = Rc::new(Artifacts::from(
+            std::env::current_dir()?.join(".devnet").as_path(),
+        ));
+        // let artifacts = Rc::new(Artifacts::from(self.config.artifacts.as_path()));
+
+        let docker_stages = self.docker(artifacts, monorepo);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
         for stage in inner {
