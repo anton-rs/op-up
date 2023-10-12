@@ -13,6 +13,7 @@ pub mod genesis;
 
 /// Optimism Monorepo utilities.
 pub mod monorepo;
+pub use monorepo::*;
 
 /// Core components of the OP Stack
 pub mod components;

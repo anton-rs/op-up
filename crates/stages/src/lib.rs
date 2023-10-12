@@ -8,7 +8,6 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-pub(crate) mod git;
 pub(crate) mod json;
 pub(crate) mod net;
 

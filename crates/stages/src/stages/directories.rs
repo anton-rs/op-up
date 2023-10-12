@@ -18,13 +18,8 @@ impl crate::Stage for Directories {
     /// Executes the [Directories] stage.
     fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing directories stage");
-
-        if !self.monorepo.exists() {
-            tracing::info!(target: "stages", "Cloning the optimism monorepo from github (this may take a while)...");
-            let proj_root = project_root::get_project_root()?;
-            crate::git::git_clone(proj_root.as_path(), op_config::OP_MONOREPO_URL)?;
-        }
-
+        let proj_root = project_root::get_project_root()?;
+        op_primitives::Monorepo::clone(proj_root.as_path())?;
         Ok(())
     }
 }
