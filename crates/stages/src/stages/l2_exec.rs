@@ -4,8 +4,7 @@ use std::process::Command;
 /// Layer 2 Execution Client Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Executor {
-    /// The l2 client choice.
-    pub l2_client: String,
+    l2_client: String,
 }
 
 impl crate::Stage for Executor {

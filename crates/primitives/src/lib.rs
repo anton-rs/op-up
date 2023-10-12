@@ -8,11 +8,15 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-/// Genesis templates.
-pub mod genesis;
+#[doc(hidden)]
+pub mod artifacts;
+pub use artifacts::*;
 
-/// Optimism Monorepo utilities.
-pub mod monorepo;
+#[doc(hidden)]
+pub mod genesis;
+pub use genesis::*;
+
+mod monorepo;
 pub use monorepo::*;
 
 /// Core components of the OP Stack

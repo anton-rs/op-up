@@ -1,11 +1,13 @@
 use eyre::Result;
+use op_primitives::Artifacts;
 use std::process::Command;
+use std::rc::Rc;
 
 /// Challenger Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Challenger {
-    /// The challenger choice.
-    pub challenger: String,
+    artifacts: Rc<Artifacts>,
+    challenger: String,
 }
 
 impl crate::Stage for Challenger {
@@ -18,9 +20,8 @@ impl crate::Stage for Challenger {
         let proj_root = project_root::get_project_root()?;
         let docker_dir = proj_root.as_path().join("docker");
 
-        // todo: fix this to use the stack config artifacts dir instead of .devnet
-        let addresses_json_file = proj_root.as_path().join(".devnet").join("addresses.json");
-        let addresses = crate::json::read_json(&addresses_json_file)?;
+        let addresses_json = self.artifacts.l1_deployments();
+        let addresses = crate::json::read_json(&addresses_json)?;
 
         let start_challenger = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "challenger"])
@@ -45,7 +46,10 @@ impl crate::Stage for Challenger {
 
 impl Challenger {
     /// Creates a new challenger stage.
-    pub fn new(challenger: String) -> Self {
-        Self { challenger }
+    pub fn new(artifacts: Rc<Artifacts>, challenger: String) -> Self {
+        Self {
+            artifacts,
+            challenger,
+        }
     }
 }

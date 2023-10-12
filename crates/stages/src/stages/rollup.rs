@@ -4,8 +4,7 @@ use std::process::Command;
 /// Rollup Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Rollup {
-    /// The rollup client choice.
-    pub rollup_client: String,
+    rollup_client: String,
 }
 
 impl crate::Stage for Rollup {

@@ -6,10 +6,8 @@ use std::rc::Rc;
 /// L1 Genesis Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct L1Genesis {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
-    /// The l1 genesis timestamp.
-    pub genesis_timestamp: u64,
+    monorepo: Rc<Monorepo>,
+    genesis_timestamp: u64,
 }
 
 impl crate::Stage for L1Genesis {

@@ -5,10 +5,8 @@ use std::rc::Rc;
 /// Deploy Config Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct DeployConfig {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
-    /// The genesis timestamp.
-    pub genesis_timestamp: u64,
+    monorepo: Rc<Monorepo>,
+    genesis_timestamp: u64,
 }
 
 impl crate::Stage for DeployConfig {

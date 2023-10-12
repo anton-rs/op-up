@@ -1,13 +1,14 @@
 use eyre::Result;
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
+use std::path::Path;
 use std::process::Command;
 use std::rc::Rc;
 
 /// Devnet Allocs Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Allocs {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
+    artifacts: Rc<Artifacts>,
+    monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Allocs {
@@ -32,27 +33,10 @@ impl crate::Stage for Allocs {
             );
         }
 
-        let copy_addr = Command::new("cp")
-            .args([".devnet/addresses.json", "../.devnet/"])
-            .current_dir(self.monorepo.path())
-            .output()?;
-        if !copy_addr.status.success() {
-            eyre::bail!(
-                "failed to copy l1 deployments: {}",
-                String::from_utf8_lossy(&copy_addr.stderr)
-            );
-        }
-
-        let copy_allocs = Command::new("cp")
-            .args([".devnet/allocs-l1.json", "../.devnet/"])
-            .current_dir(self.monorepo.path())
-            .output()?;
-        if !copy_allocs.status.success() {
-            eyre::bail!(
-                "failed to copy allocs: {}",
-                String::from_utf8_lossy(&copy_allocs.stderr)
-            );
-        }
+        self.artifacts
+            .copy_from(Path::new(".devnet/addresses.json"))?;
+        self.artifacts
+            .copy_from(Path::new(".devnet/allocs-l1.json"))?;
 
         Ok(())
     }
@@ -60,7 +44,10 @@ impl crate::Stage for Allocs {
 
 impl Allocs {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>) -> Self {
-        Self { monorepo }
+    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+        Self {
+            artifacts,
+            monorepo,
+        }
     }
 }

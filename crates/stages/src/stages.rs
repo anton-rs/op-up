@@ -1,28 +1,40 @@
-#![allow(missing_docs)]
 use eyre::Result;
 use std::rc::Rc;
 
 use op_config::Config;
 use op_primitives::genesis;
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
 
+#[doc(hidden)]
 pub mod allocs;
-pub mod artifacts;
+#[doc(hidden)]
 pub mod cannon;
+#[doc(hidden)]
 pub mod contracts;
+#[doc(hidden)]
 pub mod deploy_config;
+#[doc(hidden)]
 pub mod directories;
 
+#[doc(hidden)]
 pub mod l1_exec;
+#[doc(hidden)]
 pub mod l1_genesis;
 
+#[doc(hidden)]
 pub mod l2_exec;
+#[doc(hidden)]
 pub mod l2_genesis;
 
+#[doc(hidden)]
 pub mod batcher;
+#[doc(hidden)]
 pub mod challenger;
+#[doc(hidden)]
 pub mod proposer;
+#[doc(hidden)]
 pub mod rollup;
+#[doc(hidden)]
 pub mod stateviz;
 
 /// Stages
@@ -38,17 +50,26 @@ pub struct Stages<'a> {
 
 impl Stages<'_> {
     /// Build the default docker-based stages.
-    pub fn docker(&self, monorepo: Rc<Monorepo>) -> Vec<Box<dyn crate::Stage>> {
+    pub fn docker(
+        &self,
+        artifacts: Rc<Artifacts>,
+        monorepo: Rc<Monorepo>,
+    ) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
         let l1_client = self.config.l1_client.to_string();
         let l2_client = self.config.l2_client.to_string();
         let rollup_client = self.config.rollup_client.to_string();
         let challenge_agent = self.config.challenger.to_string();
         vec![
-            Box::new(artifacts::Artifacts::new(self.config.artifacts.clone())),
-            Box::new(directories::Directories::new(Rc::clone(&monorepo))),
+            Box::new(directories::Directories::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
             Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
-            Box::new(allocs::Allocs::new(Rc::clone(&monorepo))),
+            Box::new(allocs::Allocs::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
             Box::new(deploy_config::DeployConfig::new(
                 Rc::clone(&monorepo),
                 genesis_timestamp,
@@ -62,10 +83,16 @@ impl Stages<'_> {
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(l2_client)),
             Box::new(rollup::Rollup::new(rollup_client)),
-            Box::new(proposer::Proposer::new()),
-            Box::new(batcher::Batcher::new(Rc::clone(&monorepo))),
-            Box::new(challenger::Challenger::new(challenge_agent)),
-            Box::new(stateviz::Stateviz::new()),
+            Box::new(proposer::Proposer::new(Rc::clone(&artifacts))),
+            Box::new(batcher::Batcher::new(
+                Rc::clone(&artifacts),
+                Rc::clone(&monorepo),
+            )),
+            Box::new(challenger::Challenger::new(
+                Rc::clone(&artifacts),
+                challenge_agent,
+            )),
+            Box::new(stateviz::Stateviz::new(Rc::clone(&artifacts))),
         ]
     }
 
@@ -75,7 +102,14 @@ impl Stages<'_> {
 
         let monorepo = Rc::new(Monorepo::new()?);
 
-        let docker_stages = self.docker(monorepo);
+        // todo: fix this to use the stack config once the artifacts directory is configurable in
+        // docker containers.
+        let artifacts = Rc::new(Artifacts::from(
+            std::env::current_dir()?.join(".devnet").as_path(),
+        ));
+        // let artifacts = Rc::new(Artifacts::from(self.config.artifacts.as_path()));
+
+        let docker_stages = self.docker(artifacts, monorepo);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
         for stage in inner {
