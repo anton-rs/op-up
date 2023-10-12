@@ -4,8 +4,12 @@ use std::{
     process::Command,
 };
 
-/// Optimism monorepo git url.
-pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
+/// Optimism monorepo git URL.
+pub const OP_MONOREPO_GIT_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
+
+/// Optimism monorepo tarball download URL.
+pub const OP_MONOREPO_TAR_URL: &str =
+    "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz";
 
 /// The monorepo directory.
 pub const MONOREPO_DIR: &str = "optimism";
@@ -21,11 +25,23 @@ macro_rules! path_to_str {
     };
 }
 
+/// The source from which to obtain the monorepo.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum MonorepoSource {
+    /// Clone from git.
+    Git,
+    /// Download from a tarball archive.
+    #[default]
+    Tarball,
+}
+
 /// The Optimism Monorepo.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Monorepo {
     /// Path for the directory holding the monorepo dir.
     pwd: PathBuf,
+    /// The source from which to obtain the monorepo.
+    source: MonorepoSource,
 }
 
 impl Monorepo {
@@ -37,6 +53,7 @@ impl Monorepo {
     pub fn new() -> Result<Self> {
         Ok(Self {
             pwd: std::env::current_dir()?,
+            source: MonorepoSource::Tarball,
         })
     }
 
@@ -102,10 +119,27 @@ impl Monorepo {
 }
 
 impl Monorepo {
+    /// Obtains the monorepo from the given source.
+    pub fn obtain_from_source(&self) -> Result<()> {
+        match self.source {
+            MonorepoSource::Git => self.git_clone(),
+            MonorepoSource::Tarball => self.download(),
+        }
+    }
+
     /// Clones the Optimism Monorepo into the given directory.
-    pub fn git_clone(&self) -> Result<()> {
+    fn git_clone(&self) -> Result<()> {
         tracing::info!(target: "monorepo", "Cloning optimism monorepo (this may take a while)...");
-        git_clone(&self.pwd, OP_MONOREPO_URL)
+        git_clone(&self.pwd, OP_MONOREPO_GIT_URL)
+    }
+
+    /// Downloads the Optimism Monorepo from the Github archive into the given directory.
+    fn download(&self) -> Result<()> {
+        tracing::info!(target: "monorepo", "Downloading optimism monorepo...");
+        download_file(&self.pwd, OP_MONOREPO_TAR_URL, "optimism.tar.gz")?;
+        unzip_tarball(&self.pwd, "optimism.tar.gz")?;
+        mv_dir(&self.pwd, "optimism-develop", MONOREPO_DIR)?;
+        Ok(())
     }
 }
 
@@ -113,6 +147,7 @@ impl From<&Path> for Monorepo {
     fn from(local: &Path) -> Self {
         Self {
             pwd: local.to_path_buf(),
+            source: MonorepoSource::Tarball,
         }
     }
 }
@@ -131,6 +166,66 @@ pub(crate) fn git_clone(pwd: &Path, repo: &str) -> Result<()> {
         eyre::bail!(
             "Failed to clone {} in {:?}: {}",
             repo,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Downloads a file from a given URL into the given directory.
+pub(crate) fn download_file(pwd: &Path, url: &str, name: &str) -> Result<()> {
+    let out = Command::new("curl")
+        .arg("-L")
+        .arg("--output")
+        .arg(name)
+        .arg(url)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to download {} in {:?}: {}",
+            url,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Unzips a tarball archive into the given directory.
+pub(crate) fn unzip_tarball(pwd: &Path, name: &str) -> Result<()> {
+    let out = Command::new("tar")
+        .arg("-xvf")
+        .arg(name)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to unzip {} in {:?}: {}",
+            name,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Moves a directory from one location to another.
+pub(crate) fn mv_dir(pwd: &Path, src: &str, dst: &str) -> Result<()> {
+    let out = Command::new("mv")
+        .arg(src)
+        .arg(dst)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to move {} to {} in {:?}: {}",
+            src,
+            dst,
             pwd,
             String::from_utf8_lossy(&out.stderr)
         )

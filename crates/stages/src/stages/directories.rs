@@ -20,7 +20,8 @@ impl crate::Stage for Directories {
     fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing directories stage");
         self.artifacts.create()?;
-        self.monorepo.git_clone()
+
+        self.monorepo.obtain_from_source()
     }
 }
 
