@@ -11,6 +11,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
+op-composer = { path = "../composer" }
 op-contracts = { path = "../contracts" }
 op-config = { path = "../config" }
 op-primitives = { path = "../primitives" }
