@@ -6,6 +6,7 @@ use std::rc::Rc;
 /// L2 Genesis Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct L2Genesis {
+    l1_url: Option<String>,
     monorepo: Rc<Monorepo>,
 }
 
@@ -34,9 +35,10 @@ impl crate::Stage for L2Genesis {
         let l2_genesis_str = path_to_str!(l2_genesis)?;
 
         tracing::info!(target: "stages", "Creating L2 and rollup genesis...");
+        let l1_url = self.l1_url.clone().unwrap_or(op_config::L1_URL.to_owned());
         let l2_genesis = Command::new("go")
             .args(["run", "cmd/main.go", "genesis", "l2"])
-            .args(["--l1-rpc", op_config::L1_URL])
+            .args(["--l1-rpc", &l1_url])
             .args(["--deploy-config", deploy_config])
             .args(["--deployment-dir", devnet_deploys])
             .args(["--outfile.l2", l2_genesis_str])
@@ -57,7 +59,7 @@ impl crate::Stage for L2Genesis {
 
 impl L2Genesis {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>) -> Self {
-        Self { monorepo }
+    pub fn new(l1_url: Option<String>, monorepo: Rc<Monorepo>) -> Self {
+        Self { l1_url, monorepo }
     }
 }

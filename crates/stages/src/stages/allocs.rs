@@ -1,6 +1,5 @@
 use eyre::Result;
 use op_primitives::{Artifacts, Monorepo};
-use std::path::Path;
 use std::process::Command;
 use std::rc::Rc;
 
@@ -33,10 +32,10 @@ impl crate::Stage for Allocs {
             );
         }
 
-        self.artifacts
-            .copy_from(Path::new(".devnet/addresses.json"))?;
-        self.artifacts
-            .copy_from(Path::new(".devnet/allocs-l1.json"))?;
+        let addresses = self.monorepo.addresses_json();
+        self.artifacts.copy_from(&addresses)?;
+        let l1_allocs = self.monorepo.allocs();
+        self.artifacts.copy_from(&l1_allocs)?;
 
         Ok(())
     }

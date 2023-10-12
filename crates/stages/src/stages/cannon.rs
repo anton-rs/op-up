@@ -6,8 +6,7 @@ use std::rc::Rc;
 /// Cannon Prestate Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Prestate {
-    /// The optimism monorepo.
-    pub monorepo: Rc<Monorepo>,
+    monorepo: Rc<Monorepo>,
 }
 
 impl crate::Stage for Prestate {

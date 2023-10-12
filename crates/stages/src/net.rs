@@ -15,5 +15,5 @@ pub(crate) fn wait_up(port: u16, retries: u32, wait_secs: u64) -> Result<()> {
         thread::sleep(Duration::from_secs(wait_secs));
     }
 
-    Err(eyre::eyre!("Timed out waiting for port {}.", port))
+    eyre::bail!("Timed out waiting for port {}.", port)
 }

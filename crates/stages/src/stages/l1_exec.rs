@@ -4,6 +4,7 @@ use std::process::Command;
 /// L1 Execution Client Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Executor {
+    l1_port: Option<u16>,
     l1_client: String,
 }
 
@@ -31,11 +32,11 @@ impl crate::Stage for Executor {
             );
         }
 
-        // todo: use a configured port here
-        crate::net::wait_up(op_config::L1_PORT, 10, 1)?;
+        let l1_port = self.l1_port.unwrap_or(op_config::L1_PORT);
+        crate::net::wait_up(l1_port, 10, 1)?;
 
-        // todo: do we need to do this???
-        // block entire thread, because we don't have tokio, or any similar dependency
+        // todo: do we need to do block here
+        // can we wait for the l1 client to be ready by polling?
         std::thread::sleep(std::time::Duration::from_secs(10));
 
         Ok(())
@@ -44,7 +45,7 @@ impl crate::Stage for Executor {
 
 impl Executor {
     /// Creates a new stage.
-    pub fn new(l1_client: String) -> Self {
-        Self { l1_client }
+    pub fn new(l1_port: Option<u16>, l1_client: String) -> Self {
+        Self { l1_port, l1_client }
     }
 }
