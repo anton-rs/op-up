@@ -163,19 +163,10 @@ impl Monorepo {
         let archive_file_name = "optimism_monorepo.tar.gz";
 
         download_file(&self.pwd, &self.config.tarball_url, archive_file_name)?;
-        unzip_tarball(&self.pwd, archive_file_name)?; // This name is temporary as the archive file will be deleted
+        unzip_tarball(&self.pwd, archive_file_name)?;
         mv_dir(&self.pwd, "optimism-develop", &self.config.directory_name)?;
         std::fs::remove_file(archive_file_name)?;
         Ok(())
-    }
-}
-
-impl From<&Path> for Monorepo {
-    fn from(local: &Path) -> Self {
-        Self {
-            pwd: local.to_path_buf(),
-            config: MonorepoConfig::default(),
-        }
     }
 }
 
