@@ -1,18 +1,9 @@
 use eyre::Result;
+use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
-
-/// Optimism monorepo git URL.
-pub const OP_MONOREPO_GIT_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
-
-/// Optimism monorepo tarball download URL.
-pub const OP_MONOREPO_TAR_URL: &str =
-    "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz";
-
-/// The monorepo directory.
-pub const MONOREPO_DIR: &str = "optimism";
 
 /// A macro to convert a [PathBuf] into a [Result<String>],
 /// returning an error if the path cannot be converted to a string.
@@ -25,8 +16,33 @@ macro_rules! path_to_str {
     };
 }
 
+/// Optimism Monorepo configuration.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct MonorepoConfig {
+    /// The name of the directory in which to store the Optimism Monorepo.
+    pub directory_name: String,
+    /// The source from which to obtain the Optimism Monorepo.
+    pub source: MonorepoSource,
+    /// The git URL from which to clone the Optimism Monorepo.
+    pub git_url: String,
+    /// The URL from which to download the Optimism Monorepo tarball.
+    pub tarball_url: String,
+}
+
+impl Default for MonorepoConfig {
+    fn default() -> Self {
+        Self {
+            source: MonorepoSource::Tarball,
+            directory_name: "optimism".to_string(),
+            git_url: "git@github.com:ethereum-optimism/optimism.git".to_string(),
+            tarball_url: "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz"
+                .to_string(),
+        }
+    }
+}
+
 /// The source from which to obtain the monorepo.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
 pub enum MonorepoSource {
     /// Clone from git.
     Git,
@@ -40,26 +56,26 @@ pub enum MonorepoSource {
 pub struct Monorepo {
     /// Path for the directory holding the monorepo dir.
     pwd: PathBuf,
-    /// The source from which to obtain the monorepo.
-    source: MonorepoSource,
+    /// Configuration for the monorepo.
+    config: MonorepoConfig,
 }
 
 impl Monorepo {
-    /// Creates a new monorepo instance.
+    /// Creates a new monorepo instance with the given [MonorepoConfig] options.
     ///
     /// # Errors
     ///
     /// If the current working directory cannot be determined, this method will return an error.
-    pub fn new() -> Result<Self> {
+    pub fn with_config(config: MonorepoConfig) -> Result<Self> {
         Ok(Self {
             pwd: std::env::current_dir()?,
-            source: MonorepoSource::Tarball,
+            config,
         })
     }
 
     /// Returns the path to the monorepo directory.
     pub fn path(&self) -> PathBuf {
-        self.pwd.join(MONOREPO_DIR)
+        self.pwd.join(&self.config.directory_name)
     }
 
     /// Returns the devnet artifacts directory.
@@ -121,7 +137,7 @@ impl Monorepo {
 impl Monorepo {
     /// Obtains the monorepo from the given source.
     pub fn obtain_from_source(&self) -> Result<()> {
-        match self.source {
+        match self.config.source {
             MonorepoSource::Git => self.git_clone(),
             MonorepoSource::Tarball => self.download(),
         }
@@ -130,15 +146,26 @@ impl Monorepo {
     /// Clones the Optimism Monorepo into the given directory.
     fn git_clone(&self) -> Result<()> {
         tracing::info!(target: "monorepo", "Cloning optimism monorepo (this may take a while)...");
-        git_clone(&self.pwd, OP_MONOREPO_GIT_URL)
+        git_clone(&self.pwd, &self.config.git_url)
     }
 
-    /// Downloads the Optimism Monorepo from the Github archive into the given directory.
+    /// Downloads the Optimism Monorepo from the configured tarball archive.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an Error if:
+    /// - The archive cannot be downloaded
+    /// - The downloaded file cannot be uncompressed
+    /// - The resulting directory is not found or cannot be moved
+    /// - The archive file cannot be deleted
     fn download(&self) -> Result<()> {
         tracing::info!(target: "monorepo", "Downloading optimism monorepo...");
-        download_file(&self.pwd, OP_MONOREPO_TAR_URL, "optimism.tar.gz")?;
-        unzip_tarball(&self.pwd, "optimism.tar.gz")?;
-        mv_dir(&self.pwd, "optimism-develop", MONOREPO_DIR)?;
+        let archive_file_name = "optimism_monorepo.tar.gz";
+
+        download_file(&self.pwd, &self.config.tarball_url, archive_file_name)?;
+        unzip_tarball(&self.pwd, archive_file_name)?; // This name is temporary as the archive file will be deleted
+        mv_dir(&self.pwd, "optimism-develop", &self.config.directory_name)?;
+        std::fs::remove_file(archive_file_name)?;
         Ok(())
     }
 }
@@ -147,7 +174,7 @@ impl From<&Path> for Monorepo {
     fn from(local: &Path) -> Self {
         Self {
             pwd: local.to_path_buf(),
-            source: MonorepoSource::Tarball,
+            config: MonorepoConfig::default(),
         }
     }
 }

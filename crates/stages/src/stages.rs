@@ -100,7 +100,7 @@ impl Stages<'_> {
     pub async fn execute(&self) -> eyre::Result<()> {
         tracing::debug!(target: "stages", "executing stages");
 
-        let monorepo = Rc::new(Monorepo::new()?);
+        let monorepo = Rc::new(Monorepo::with_config(self.config.monorepo.clone())?);
 
         // todo: fix this to use the stack config once the artifacts directory is configurable in
         // docker containers.
