@@ -1,17 +1,19 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::Monorepo;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Deploy Config Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct DeployConfig {
-    monorepo: Rc<Monorepo>,
+    monorepo: Arc<Monorepo>,
     genesis_timestamp: u64,
 }
 
+#[async_trait]
 impl crate::Stage for DeployConfig {
     /// Executes the [DeployConfig] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing deploy config stage");
         let deploy_config_file = self.monorepo.deploy_config();
         let mut deploy_config = crate::json::read_json(&deploy_config_file)?;
@@ -29,7 +31,7 @@ impl crate::Stage for DeployConfig {
 
 impl DeployConfig {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>, genesis_timestamp: u64) -> Self {
+    pub fn new(monorepo: Arc<Monorepo>, genesis_timestamp: u64) -> Self {
         Self {
             monorepo,
             genesis_timestamp,

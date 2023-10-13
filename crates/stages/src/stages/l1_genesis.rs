@@ -1,18 +1,20 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::{path_to_str, Monorepo};
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// L1 Genesis Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct L1Genesis {
-    monorepo: Rc<Monorepo>,
+    monorepo: Arc<Monorepo>,
     genesis_timestamp: u64,
 }
 
+#[async_trait]
 impl crate::Stage for L1Genesis {
     /// Executes the [L1Genesis] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing l1 genesis stage");
 
         let deploy_config = self.monorepo.deploy_config();
@@ -57,7 +59,7 @@ impl crate::Stage for L1Genesis {
 
 impl L1Genesis {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>, genesis_timestamp: u64) -> Self {
+    pub fn new(monorepo: Arc<Monorepo>, genesis_timestamp: u64) -> Self {
         Self {
             monorepo,
             genesis_timestamp,

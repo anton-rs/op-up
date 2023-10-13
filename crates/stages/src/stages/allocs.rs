@@ -1,18 +1,20 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::{Artifacts, Monorepo};
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Devnet Allocs Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Allocs {
-    artifacts: Rc<Artifacts>,
-    monorepo: Rc<Monorepo>,
+    artifacts: Arc<Artifacts>,
+    monorepo: Arc<Monorepo>,
 }
 
+#[async_trait]
 impl crate::Stage for Allocs {
     /// Executes the allocs stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing allocs stage");
 
         let l2_genesis_file = self.monorepo.l2_genesis();
@@ -43,7 +45,7 @@ impl crate::Stage for Allocs {
 
 impl Allocs {
     /// Creates a new stage.
-    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>, monorepo: Arc<Monorepo>) -> Self {
         Self {
             artifacts,
             monorepo,

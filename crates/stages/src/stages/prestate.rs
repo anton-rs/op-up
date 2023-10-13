@@ -1,17 +1,19 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::Monorepo;
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Fault proof Prestate Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Prestate {
-    monorepo: Rc<Monorepo>,
+    monorepo: Arc<Monorepo>,
 }
 
+#[async_trait]
 impl crate::Stage for Prestate {
     /// Executes the fault proof prestate stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing fault proof prestate stage");
 
         let monorepo = self.monorepo.path();
@@ -46,7 +48,7 @@ impl crate::Stage for Prestate {
 
 impl Prestate {
     /// Creates a new stage.
-    pub fn new(monorepo: Rc<Monorepo>) -> Self {
+    pub fn new(monorepo: Arc<Monorepo>) -> Self {
         Self { monorepo }
     }
 }

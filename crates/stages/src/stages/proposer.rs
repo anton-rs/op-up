@@ -1,17 +1,19 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::Artifacts;
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Proposer Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Proposer {
-    artifacts: Rc<Artifacts>,
+    artifacts: Arc<Artifacts>,
 }
 
+#[async_trait]
 impl crate::Stage for Proposer {
     /// Executes the [Proposer] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing proposer stage");
 
         // todo: this should be replaced with running the docker container inline through
@@ -42,7 +44,7 @@ impl crate::Stage for Proposer {
 
 impl Proposer {
     /// Creates a new stage.
-    pub fn new(artifacts: Rc<Artifacts>) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>) -> Self {
         Self { artifacts }
     }
 }

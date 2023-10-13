@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use eyre::Result;
 use std::process::Command;
 
@@ -8,9 +9,10 @@ pub struct Executor {
     l2_client: String,
 }
 
+#[async_trait]
 impl crate::Stage for Executor {
     /// Executes the L2 Executor Stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing l2 execution client stage");
 
         // todo: this should be replaced with running the docker container inline through

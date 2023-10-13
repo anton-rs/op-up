@@ -1,17 +1,19 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::Artifacts;
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Stateviz
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Stateviz {
-    artifacts: Rc<Artifacts>,
+    artifacts: Arc<Artifacts>,
 }
 
+#[async_trait]
 impl crate::Stage for Stateviz {
     /// Executes the [Stateviz] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing stateviz stage");
 
         // todo: this should be replaced with running the docker container inline through
@@ -43,7 +45,7 @@ impl crate::Stage for Stateviz {
 
 impl Stateviz {
     /// Creates a new stateviz stage,.
-    pub fn new(artifacts: Rc<Artifacts>) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>) -> Self {
         Self { artifacts }
     }
 }

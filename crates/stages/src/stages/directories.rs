@@ -1,5 +1,6 @@
+use async_trait::async_trait;
 use eyre::Result;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use op_primitives::{Artifacts, Monorepo};
 
@@ -11,13 +12,14 @@ use op_primitives::{Artifacts, Monorepo};
 /// pipeline.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Directories {
-    artifacts: Rc<Artifacts>,
-    monorepo: Rc<Monorepo>,
+    artifacts: Arc<Artifacts>,
+    monorepo: Arc<Monorepo>,
 }
 
+#[async_trait]
 impl crate::Stage for Directories {
     /// Executes the [Directories] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing directories stage");
         self.artifacts.create()?;
 
@@ -27,7 +29,7 @@ impl crate::Stage for Directories {
 
 impl Directories {
     /// Creates a new stage.
-    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>, monorepo: Arc<Monorepo>) -> Self {
         Self {
             artifacts,
             monorepo,

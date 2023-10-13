@@ -1,18 +1,20 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::{Artifacts, Monorepo};
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Batcher Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Batcher {
-    artifacts: Rc<Artifacts>,
-    monorepo: Rc<Monorepo>,
+    artifacts: Arc<Artifacts>,
+    monorepo: Arc<Monorepo>,
 }
 
+#[async_trait]
 impl crate::Stage for Batcher {
     /// Executes the [Batcher] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing batcher stage");
 
         // todo: this should be replaced with running the docker container inline through
@@ -49,7 +51,7 @@ impl crate::Stage for Batcher {
 
 impl Batcher {
     /// Creates a new stage.
-    pub fn new(artifacts: Rc<Artifacts>, monorepo: Rc<Monorepo>) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>, monorepo: Arc<Monorepo>) -> Self {
         Self {
             artifacts,
             monorepo,
