@@ -136,7 +136,14 @@ impl Monorepo {
 
 impl Monorepo {
     /// Obtains the monorepo from the given source.
+    ///
+    /// If the monorepo already exists, this method will garacefully log a warning and return.
     pub fn obtain_from_source(&self) -> Result<()> {
+        if self.path().exists() {
+            tracing::warn!(target: "monorepo", "Monorepo already exists, skipping...");
+            return Ok(());
+        }
+
         match self.config.source {
             MonorepoSource::Git => self.git_clone(),
             MonorepoSource::Tarball => self.download(),
