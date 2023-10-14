@@ -43,6 +43,7 @@ impl Default for MonorepoConfig {
 
 /// The source from which to obtain the monorepo.
 #[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum MonorepoSource {
     /// Clone from git.
     Git,
