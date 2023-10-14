@@ -8,13 +8,13 @@ use op_primitives::{Artifacts, Monorepo};
 #[doc(hidden)]
 pub mod allocs;
 #[doc(hidden)]
-pub mod cannon;
-#[doc(hidden)]
 pub mod contracts;
 #[doc(hidden)]
 pub mod deploy_config;
 #[doc(hidden)]
 pub mod directories;
+#[doc(hidden)]
+pub mod prestate;
 
 #[doc(hidden)]
 pub mod l1_exec;
@@ -65,7 +65,7 @@ impl Stages<'_> {
                 Rc::clone(&artifacts),
                 Rc::clone(&monorepo),
             )),
-            Box::new(cannon::Prestate::new(Rc::clone(&monorepo))),
+            Box::new(prestate::Prestate::new(Rc::clone(&monorepo))),
             Box::new(allocs::Allocs::new(
                 Rc::clone(&artifacts),
                 Rc::clone(&monorepo),
