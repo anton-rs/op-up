@@ -1,14 +1,9 @@
 use eyre::Result;
+use serde::{Deserialize, Serialize};
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
-
-/// Optimism monorepo git url.
-pub const OP_MONOREPO_URL: &str = "git@github.com:ethereum-optimism/optimism.git";
-
-/// The monorepo directory.
-pub const MONOREPO_DIR: &str = "optimism";
 
 /// A macro to convert a [PathBuf] into a [Result<String>],
 /// returning an error if the path cannot be converted to a string.
@@ -21,28 +16,67 @@ macro_rules! path_to_str {
     };
 }
 
+/// Optimism Monorepo configuration.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct MonorepoConfig {
+    /// The name of the directory in which to store the Optimism Monorepo.
+    pub directory_name: String,
+    /// The source from which to obtain the Optimism Monorepo.
+    pub source: MonorepoSource,
+    /// The git URL from which to clone the Optimism Monorepo.
+    pub git_url: String,
+    /// The URL from which to download the Optimism Monorepo tarball.
+    pub tarball_url: String,
+}
+
+impl Default for MonorepoConfig {
+    fn default() -> Self {
+        Self {
+            source: MonorepoSource::Tarball,
+            directory_name: "optimism".to_string(),
+            git_url: "git@github.com:ethereum-optimism/optimism.git".to_string(),
+            tarball_url: "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz"
+                .to_string(),
+        }
+    }
+}
+
+/// The source from which to obtain the monorepo.
+#[derive(Debug, Clone, Copy, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MonorepoSource {
+    /// Clone from git.
+    Git,
+    /// Download from a tarball archive.
+    #[default]
+    Tarball,
+}
+
 /// The Optimism Monorepo.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Monorepo {
     /// Path for the directory holding the monorepo dir.
     pwd: PathBuf,
+    /// Configuration for the monorepo.
+    config: MonorepoConfig,
 }
 
 impl Monorepo {
-    /// Creates a new monorepo instance.
+    /// Creates a new monorepo instance with the given [MonorepoConfig] options.
     ///
     /// # Errors
     ///
     /// If the current working directory cannot be determined, this method will return an error.
-    pub fn new() -> Result<Self> {
+    pub fn with_config(config: MonorepoConfig) -> Result<Self> {
         Ok(Self {
             pwd: std::env::current_dir()?,
+            config,
         })
     }
 
     /// Returns the path to the monorepo directory.
     pub fn path(&self) -> PathBuf {
-        self.pwd.join(MONOREPO_DIR)
+        self.pwd.join(&self.config.directory_name)
     }
 
     /// Returns the devnet artifacts directory.
@@ -102,18 +136,45 @@ impl Monorepo {
 }
 
 impl Monorepo {
-    /// Clones the Optimism Monorepo into the given directory.
-    pub fn git_clone(&self) -> Result<()> {
-        tracing::info!(target: "monorepo", "Cloning optimism monorepo (this may take a while)...");
-        git_clone(&self.pwd, OP_MONOREPO_URL)
-    }
-}
-
-impl From<&Path> for Monorepo {
-    fn from(local: &Path) -> Self {
-        Self {
-            pwd: local.to_path_buf(),
+    /// Obtains the monorepo from the given source.
+    ///
+    /// If the monorepo already exists, this method will garacefully log a warning and return.
+    pub fn obtain_from_source(&self) -> Result<()> {
+        if self.path().exists() {
+            tracing::warn!(target: "monorepo", "Monorepo already exists, skipping...");
+            return Ok(());
         }
+
+        match self.config.source {
+            MonorepoSource::Git => self.git_clone(),
+            MonorepoSource::Tarball => self.download(),
+        }
+    }
+
+    /// Clones the Optimism Monorepo into the given directory.
+    fn git_clone(&self) -> Result<()> {
+        tracing::info!(target: "monorepo", "Cloning optimism monorepo (this may take a while)...");
+        git_clone(&self.pwd, &self.config.git_url)
+    }
+
+    /// Downloads the Optimism Monorepo from the configured tarball archive.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an Error if:
+    /// - The archive cannot be downloaded
+    /// - The downloaded file cannot be uncompressed
+    /// - The resulting directory is not found or cannot be moved
+    /// - The archive file cannot be deleted
+    fn download(&self) -> Result<()> {
+        tracing::info!(target: "monorepo", "Downloading optimism monorepo...");
+        let archive_file_name = "optimism_monorepo.tar.gz";
+
+        download_file(&self.pwd, &self.config.tarball_url, archive_file_name)?;
+        unzip_tarball(&self.pwd, archive_file_name)?;
+        mv_dir(&self.pwd, "optimism-develop", &self.config.directory_name)?;
+        std::fs::remove_file(archive_file_name)?;
+        Ok(())
     }
 }
 
@@ -131,6 +192,66 @@ pub(crate) fn git_clone(pwd: &Path, repo: &str) -> Result<()> {
         eyre::bail!(
             "Failed to clone {} in {:?}: {}",
             repo,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Downloads a file from a given URL into the given directory.
+pub(crate) fn download_file(pwd: &Path, url: &str, name: &str) -> Result<()> {
+    let out = Command::new("curl")
+        .arg("-L")
+        .arg("--output")
+        .arg(name)
+        .arg(url)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to download {} in {:?}: {}",
+            url,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Unzips a tarball archive into the given directory.
+pub(crate) fn unzip_tarball(pwd: &Path, name: &str) -> Result<()> {
+    let out = Command::new("tar")
+        .arg("-xvf")
+        .arg(name)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to unzip {} in {:?}: {}",
+            name,
+            pwd,
+            String::from_utf8_lossy(&out.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+/// Moves a directory from one location to another.
+pub(crate) fn mv_dir(pwd: &Path, src: &str, dst: &str) -> Result<()> {
+    let out = Command::new("mv")
+        .arg(src)
+        .arg(dst)
+        .current_dir(pwd)
+        .output()?;
+    if !out.status.success() {
+        eyre::bail!(
+            "Failed to move {} to {} in {:?}: {}",
+            src,
+            dst,
             pwd,
             String::from_utf8_lossy(&out.stderr)
         )

@@ -12,14 +12,13 @@ use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 use tracing::trace;
 
-use op_primitives::{ChallengerAgent, L1Client, L2Client, RollupClient};
+use op_primitives::{ChallengerAgent, L1Client, L2Client, MonorepoConfig, RollupClient};
 
 use crate::providers::{
     error::ExtractConfigError, optional::OptionalStrictProfileProvider,
     rename::RenameProfileProvider, toml::TomlFileProvider, wraps::WrapProfileProvider,
 };
 use crate::root::RootPath;
-// use crate::stages::StageProvider;
 
 /// L1 node url.
 pub const L1_URL: &str = "http://localhost:8545";
@@ -92,6 +91,9 @@ pub struct Config<'a> {
 
     /// The path to the op stack artifact directory. **(default: _default_ `.stack`)**
     pub artifacts: PathBuf,
+
+    /// The Optimism Monorepo configuration options.
+    pub monorepo: MonorepoConfig,
 
     /// The type of L1 Client to use. **(default: _default_ `L1Client::Geth`)**
     pub l1_client: L1Client,
@@ -488,6 +490,7 @@ impl Default for Config<'_> {
             _phantom: PhantomData,
             profile: Self::DEFAULT_PROFILE,
             artifacts: PathBuf::from(Self::STACK_DIR_NAME),
+            monorepo: MonorepoConfig::default(),
             l1_client: L1Client::default(),
             l2_client: L2Client::default(),
             l1_client_url: Some(L1_URL.to_string()),
