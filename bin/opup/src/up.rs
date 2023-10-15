@@ -52,7 +52,9 @@ impl UpCommand {
 
             if self.devnet {
                 tracing::info!(target: "cli", "Building default devnet stack");
-                Stages::from(Config::default()).execute().await
+                Stages::from(Config::default().force_overwrites(self.force))
+                    .execute()
+                    .await
             } else {
                 // Get the directory of the config file if it exists.
                 let config_dir = self.config.as_ref().and_then(|p| p.parent());
@@ -60,7 +62,7 @@ impl UpCommand {
 
                 // Build a config from the parsed config directory.
                 tracing::info!(target: "cli", "Loading op-stack config from {:?}", config_dir);
-                let stack = Config::load_with_root(config_dir);
+                let stack = Config::load_with_root(config_dir).force_overwrites(self.force);
 
                 tracing::info!(target: "cli", "Stack: {:#?}", stack);
 
