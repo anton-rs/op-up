@@ -16,6 +16,13 @@ pub struct UpCommand {
     /// Whether to build a hard-coded default devnet stack, ignoring the config file.
     #[arg(long, short)]
     pub devnet: bool,
+
+    /// Force enables op-up to enter overwrite mode.
+    ///
+    /// It enables overwriting of persistant artifacts from previous runs,
+    /// for example, git repository clones.
+    #[arg(long, short)]
+    pub force: bool,
 }
 
 impl UpCommand {
@@ -34,6 +41,10 @@ impl UpCommand {
             let docker = Docker::connect_with_local_defaults()?;
             let version = docker.version().await?;
             tracing::info!(target: "cli", "docker version: {:?}", version);
+
+            // todo get the force arg and pass it into the stages pipeline
+            // should the stack config be transformed to include this and
+            // other flags?
 
             if self.devnet {
                 tracing::info!(target: "cli", "Building default devnet stack");
