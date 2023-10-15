@@ -28,7 +28,11 @@ pub struct UpCommand {
 impl UpCommand {
     /// Create a new Up CLI Subcommand.
     pub fn new(config: Option<PathBuf>, devnet: bool) -> Self {
-        Self { config, devnet }
+        Self {
+            config,
+            devnet,
+            force: false,
+        }
     }
 
     /// Run the Up CLI Subcommand.
