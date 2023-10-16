@@ -1,4 +1,3 @@
-use bollard::Docker;
 use clap::Args;
 use eyre::Result;
 use std::path::{Path, PathBuf};
@@ -39,12 +38,6 @@ impl UpCommand {
     pub fn run(&self) -> Result<()> {
         crate::runner::run_until_ctrl_c(async {
             tracing::info!(target: "cli", "bootstrapping op stack");
-
-            // todo: remove this once we have a proper stage docker component
-            //       for now, this placeholds use of [bollard].
-            let docker = Docker::connect_with_local_defaults()?;
-            let version = docker.version().await?;
-            tracing::info!(target: "cli", "docker version: {:?}", version);
 
             // todo get the force arg and pass it into the stages pipeline
             // should the stack config be transformed to include this and
