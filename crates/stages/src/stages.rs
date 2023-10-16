@@ -68,7 +68,7 @@ impl Stages<'_> {
                 Arc::clone(&artifacts),
                 Arc::clone(&monorepo),
             )),
-            Box::new(prestate::Prestate::new(Rc::clone(&monorepo))),
+            Box::new(prestate::Prestate::new(Arc::clone(&monorepo))),
             Box::new(allocs::Allocs::new(
                 Arc::clone(&artifacts),
                 Arc::clone(&monorepo),
@@ -129,7 +129,7 @@ impl Stages<'_> {
         let artifacts = Arc::new(Artifacts::from(
             std::env::current_dir()?.join(".devnet").as_path(),
         ));
-        // let artifacts = Rc::new(Artifacts::from(self.config.artifacts.as_path()));
+        // let artifacts = Arc::new(Artifacts::from(self.config.artifacts.as_path()));
 
         let docker_stages = self.docker(artifacts, monorepo, composer);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
