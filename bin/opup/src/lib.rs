@@ -11,4 +11,6 @@ pub mod telemetry;
 pub mod runner;
 
 /// The Up subcommand module that contains the logic for bringing up the stack.
-pub mod up;
+pub(crate) mod up;
+
+pub(crate) mod list;

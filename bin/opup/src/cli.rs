@@ -27,6 +27,8 @@ pub enum Command {
     Nuke,
     /// Clean all stack artifacts
     Clean,
+    /// List op-up docker containers
+    List,
 }
 
 pub fn run() -> Result<()> {
@@ -36,17 +38,16 @@ pub fn run() -> Result<()> {
 
     crate::banners::banner()?;
 
+    // Dispatch on the specified subcommand,
+    // running the `up` subcommand by default.
     match command {
-        // If no subcommand is provided, run the Up command with default config.
-        None => UpCommand::new(None, false).run()?,
-
+        None => UpCommand::new(None, false).run(),
         Some(command) => match command {
-            Command::Up(up_command) => up_command.run()?,
+            Command::Up(up_command) => up_command.run(),
+            Command::List => crate::list::run(),
             Command::Down => unimplemented!("down command not yet implemented"),
             Command::Nuke => unimplemented!("nuke command not yet implemented"),
             Command::Clean => unimplemented!("clean command not yet implemented"),
         },
     }
-
-    Ok(())
 }
