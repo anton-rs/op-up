@@ -31,6 +31,7 @@ impl crate::Stage for Executor {
                 "/bin/sh".to_string(),
                 "geth-entrypoint.sh".to_string(),
             ]),
+            image: "ethereum/client-go:v1.12.2".to_string(),
             working_dir: Some(working_dir.to_string_lossy().to_string()),
             volumes: Some(HashMap::from([
                 ("l1_data:/db".to_string(), HashMap::new()),
