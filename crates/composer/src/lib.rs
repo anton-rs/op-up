@@ -17,12 +17,14 @@ use bollard::{
     },
     exec::{CreateExecOptions, StartExecResults},
     image::CreateImageOptions,
-    service::{ContainerConfig, ContainerCreateResponse, ContainerSummary},
+    service::{ContainerCreateResponse, ContainerSummary},
     Docker,
 };
 use eyre::{bail, Result};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Serialize;
+
+pub use bollard::service::ContainerConfig;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]

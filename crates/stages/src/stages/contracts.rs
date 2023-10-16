@@ -1,12 +1,14 @@
+use async_trait::async_trait;
 use eyre::Result;
 
 /// Contract Deployment Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Contracts;
 
+#[async_trait]
 impl crate::Stage for Contracts {
     /// Executes the [Contracts] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing contract deployment stage");
 
         // contract deployment is already done in allocs stage

@@ -1,5 +1,5 @@
 use eyre::Result;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use op_config::Config;
 use op_primitives::genesis;
@@ -46,14 +46,17 @@ pub struct Stages<'a> {
     pub config: Config<'a>,
     /// The inner stages.
     pub inner: Option<Vec<Box<dyn crate::Stage>>>,
+    /// A docker composer.
+    pub composer: Option<Arc<op_composer::Composer>>,
 }
 
 impl Stages<'_> {
     /// Build the default docker-based stages.
     pub fn docker(
         &self,
-        artifacts: Rc<Artifacts>,
-        monorepo: Rc<Monorepo>,
+        artifacts: Arc<Artifacts>,
+        monorepo: Arc<Monorepo>,
+        composer: Arc<op_composer::Composer>,
     ) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
         let l1_client = self.config.l1_client.to_string();
@@ -62,29 +65,31 @@ impl Stages<'_> {
         let challenge_agent = self.config.challenger.to_string();
         vec![
             Box::new(directories::Directories::new(
-                Rc::clone(&artifacts),
-                Rc::clone(&monorepo),
+                Arc::clone(&artifacts),
+                Arc::clone(&monorepo),
             )),
-            Box::new(prestate::Prestate::new(Rc::clone(&monorepo))),
+            Box::new(prestate::Prestate::new(Arc::clone(&monorepo))),
             Box::new(allocs::Allocs::new(
-                Rc::clone(&artifacts),
-                Rc::clone(&monorepo),
+                Arc::clone(&artifacts),
+                Arc::clone(&monorepo),
             )),
             Box::new(deploy_config::DeployConfig::new(
-                Rc::clone(&monorepo),
+                Arc::clone(&monorepo),
                 genesis_timestamp,
             )),
             Box::new(l1_genesis::L1Genesis::new(
-                Rc::clone(&monorepo),
+                Arc::clone(&monorepo),
                 genesis_timestamp,
             )),
             Box::new(l1_exec::Executor::new(
                 self.config.l1_client_port,
                 l1_client,
+                composer,
+                Arc::clone(&artifacts),
             )),
             Box::new(l2_genesis::L2Genesis::new(
                 self.config.l1_client_url.clone(),
-                Rc::clone(&monorepo),
+                Arc::clone(&monorepo),
             )),
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(
@@ -95,16 +100,16 @@ impl Stages<'_> {
                 self.config.rollup_client_port,
                 rollup_client,
             )),
-            Box::new(proposer::Proposer::new(Rc::clone(&artifacts))),
+            Box::new(proposer::Proposer::new(Arc::clone(&artifacts))),
             Box::new(batcher::Batcher::new(
-                Rc::clone(&artifacts),
-                Rc::clone(&monorepo),
+                Arc::clone(&artifacts),
+                Arc::clone(&monorepo),
             )),
             Box::new(challenger::Challenger::new(
-                Rc::clone(&artifacts),
+                Arc::clone(&artifacts),
                 challenge_agent,
             )),
-            Box::new(stateviz::Stateviz::new(Rc::clone(&artifacts))),
+            Box::new(stateviz::Stateviz::new(Arc::clone(&artifacts))),
         ]
     }
 
@@ -112,20 +117,25 @@ impl Stages<'_> {
     pub async fn execute(&self) -> eyre::Result<()> {
         tracing::debug!(target: "stages", "executing stages");
 
-        let monorepo = Rc::new(Monorepo::with_config(self.config.monorepo.clone())?);
+        let monorepo = Arc::new(Monorepo::with_config(self.config.monorepo.clone())?);
+
+        let composer = self
+            .composer
+            .clone()
+            .unwrap_or(Arc::new(op_composer::Composer::new()?));
 
         // todo: fix this to use the stack config once the artifacts directory is configurable in
         // docker containers.
-        let artifacts = Rc::new(Artifacts::from(
+        let artifacts = Arc::new(Artifacts::from(
             std::env::current_dir()?.join(".devnet").as_path(),
         ));
-        // let artifacts = Rc::new(Artifacts::from(self.config.artifacts.as_path()));
+        // let artifacts = Arc::new(Artifacts::from(self.config.artifacts.as_path()));
 
-        let docker_stages = self.docker(artifacts, monorepo);
+        let docker_stages = self.docker(artifacts, monorepo, composer);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
         for stage in inner {
-            stage.execute()?;
+            stage.execute().await?;
         }
 
         tracing::info!(target: "stages", "finished executing stages");
@@ -155,6 +165,7 @@ impl<'a> From<Config<'a>> for Stages<'a> {
         Self {
             config,
             inner: None,
+            composer: None,
         }
     }
 }

@@ -39,6 +39,16 @@ impl Artifacts {
         self.path().join("addresses.json")
     }
 
+    /// Returns the l1 genesis file path.
+    pub fn l1_genesis(&self) -> PathBuf {
+        self.path().join("genesis-l1.json")
+    }
+
+    /// Returns the jwt secret file path.
+    pub fn jwt_secret(&self) -> PathBuf {
+        self.path().join("jwt-secret.txt")
+    }
+
     /// Create the artifacts directory if it does not exist.
     pub fn create(&self) -> Result<()> {
         if !self.pwd.exists() {

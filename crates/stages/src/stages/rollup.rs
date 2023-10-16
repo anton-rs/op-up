@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use eyre::Result;
 use std::process::Command;
 
@@ -8,9 +9,10 @@ pub struct Rollup {
     rollup_client: String,
 }
 
+#[async_trait]
 impl crate::Stage for Rollup {
     /// Executes the [Rollup] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing rollup stage");
 
         // todo: this should be replaced with running the docker container inline through

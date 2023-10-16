@@ -1,18 +1,20 @@
+use async_trait::async_trait;
 use eyre::Result;
 use op_primitives::{path_to_str, Monorepo};
 use std::process::Command;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// L2 Genesis Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct L2Genesis {
     l1_url: Option<String>,
-    monorepo: Rc<Monorepo>,
+    monorepo: Arc<Monorepo>,
 }
 
+#[async_trait]
 impl crate::Stage for L2Genesis {
     /// Executes the [L2Genesis] stage.
-    fn execute(&self) -> Result<()> {
+    async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing l2 genesis stage");
 
         let deploy_config = self.monorepo.deploy_config();
@@ -59,7 +61,7 @@ impl crate::Stage for L2Genesis {
 
 impl L2Genesis {
     /// Creates a new stage.
-    pub fn new(l1_url: Option<String>, monorepo: Rc<Monorepo>) -> Self {
+    pub fn new(l1_url: Option<String>, monorepo: Arc<Monorepo>) -> Self {
         Self { l1_url, monorepo }
     }
 }
