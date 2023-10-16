@@ -27,6 +27,8 @@ pub struct MonorepoConfig {
     pub git_url: String,
     /// The URL from which to download the Optimism Monorepo tarball.
     pub tarball_url: String,
+    /// Optionally force overwriting local monorepo artifacts.
+    pub force: bool,
 }
 
 impl Default for MonorepoConfig {
@@ -37,6 +39,7 @@ impl Default for MonorepoConfig {
             git_url: "git@github.com:ethereum-optimism/optimism.git".to_string(),
             tarball_url: "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz"
                 .to_string(),
+            force: false,
         }
     }
 }
@@ -140,7 +143,7 @@ impl Monorepo {
     ///
     /// If the monorepo already exists, this method will garacefully log a warning and return.
     pub fn obtain_from_source(&self) -> Result<()> {
-        if self.path().exists() {
+        if self.path().exists() && !self.config.force {
             tracing::warn!(target: "monorepo", "Monorepo already exists, skipping...");
             return Ok(());
         }

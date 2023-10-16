@@ -342,6 +342,12 @@ impl Config<'_> {
         dirs_next::home_dir().map(|p| p.join(Config::STACK_DIR_NAME))
     }
 
+    /// Force monorepo artifact overwrites.
+    pub fn force_overwrites(mut self, force: bool) -> Self {
+        self.monorepo.force = force;
+        self
+    }
+
     /// Sets the l1 client to use via a cli prompt.
     pub fn set_l1_client(&mut self) -> Result<()> {
         make_selection!(

@@ -16,12 +16,23 @@ pub struct UpCommand {
     /// Whether to build a hard-coded default devnet stack, ignoring the config file.
     #[arg(long, short)]
     pub devnet: bool,
+
+    /// Force enables op-up to enter overwrite mode.
+    ///
+    /// It enables overwriting of persistant artifacts from previous runs,
+    /// for example, git repository clones.
+    #[arg(long, short)]
+    pub force: bool,
 }
 
 impl UpCommand {
     /// Create a new Up CLI Subcommand.
     pub fn new(config: Option<PathBuf>, devnet: bool) -> Self {
-        Self { config, devnet }
+        Self {
+            config,
+            devnet,
+            force: false,
+        }
     }
 
     /// Run the Up CLI Subcommand.
@@ -35,9 +46,15 @@ impl UpCommand {
             let version = docker.version().await?;
             tracing::info!(target: "cli", "docker version: {:?}", version);
 
+            // todo get the force arg and pass it into the stages pipeline
+            // should the stack config be transformed to include this and
+            // other flags?
+
             if self.devnet {
                 tracing::info!(target: "cli", "Building default devnet stack");
-                Stages::from(Config::default()).execute().await
+                Stages::from(Config::default().force_overwrites(self.force))
+                    .execute()
+                    .await
             } else {
                 // Get the directory of the config file if it exists.
                 let config_dir = self.config.as_ref().and_then(|p| p.parent());
@@ -45,7 +62,7 @@ impl UpCommand {
 
                 // Build a config from the parsed config directory.
                 tracing::info!(target: "cli", "Loading op-stack config from {:?}", config_dir);
-                let stack = Config::load_with_root(config_dir);
+                let stack = Config::load_with_root(config_dir).force_overwrites(self.force);
 
                 tracing::info!(target: "cli", "Stack: {:#?}", stack);
 
