@@ -21,6 +21,7 @@ futures.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+which = "4.4.2"
 humantime = "2.1.0"
 prettytable-rs = "0.10"
 semver = { version = "1.0", features = ["serde"] }

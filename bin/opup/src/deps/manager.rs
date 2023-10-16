@@ -1,5 +1,4 @@
 use eyre::Result;
-use std::env;
 use std::path::{Path, PathBuf};
 use tracing::instrument;
 
@@ -21,15 +20,14 @@ pub struct DependencyManager;
 
 impl DependencyManager {
     /// Default binaries to check for.
-    pub const DEFAULT_BINARIES: &'static [&'static str] =
-        &["docker", "docker-compose", "make", "jq"];
+    pub const DEFAULT_BINARIES: &'static [&'static str] = &["docker", "curl", "tar"];
 
     /// Installs binaries that are not in the user's PATH.
     #[instrument(name = "deps")]
     pub async fn sync() -> Result<()> {
         for binary in Self::DEFAULT_BINARIES {
             tracing::debug!("Checking for {}", binary);
-            if Self::check_binary(binary).is_some() {
+            if Self::check_binary(*binary).is_some() {
                 continue;
             }
             tracing::warn!("{} not found", binary);
@@ -114,20 +112,9 @@ impl DependencyManager {
     #[instrument(name = "deps", skip(exec_name))]
     pub fn check_binary<P>(exec_name: P) -> Option<PathBuf>
     where
-        P: AsRef<Path>,
+        P: Into<String>,
     {
-        env::var_os("PATH").and_then(|paths| {
-            env::split_paths(&paths)
-                .filter_map(|dir| {
-                    let full_path = dir.join(&exec_name);
-                    if full_path.is_file() {
-                        Some(full_path)
-                    } else {
-                        None
-                    }
-                })
-                .next()
-        })
+        which::which::<String>(exec_name.into()).ok()
     }
 }
 
