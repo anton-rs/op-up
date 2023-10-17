@@ -22,6 +22,24 @@ impl DependencyManager {
     /// Default binaries to check for.
     pub const DEFAULT_BINARIES: &'static [&'static str] = &["docker", "curl", "tar"];
 
+    #[cfg(target_os = "linux")]
+    pub const LINUX_PACKAGE_MANAGERS: &'static [&'static str] = &["apt", "yum", "pacman"];
+
+    #[cfg(target_os = "linux")]
+    pub fn package_manager() -> Option<String> {
+        for pm in Self::LINUX_PACKAGE_MANAGERS {
+            if Self::check_binary(pm).is_some() {
+                Some(pm.to_string())
+            }
+        }
+        None
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn package_manager() -> Option<String> {
+        None
+    }
+
     /// Installs binaries that are not in the user's PATH.
     #[instrument(name = "deps")]
     pub async fn sync() -> Result<()> {
@@ -78,10 +96,24 @@ impl DependencyManager {
                 Err(e) => tracing::warn!("Failed to install {:?} with err: {:?}", binary, e),
             }
         } else if cfg!(target_os = "linux") {
-            let mut apt_command = std::process::Command::new("apt");
-            apt_command.arg("install");
-            apt_command.arg(binary.as_ref());
-            match apt_command.output() {
+            // TODO: this is very ugly, can we make package manager and install command
+            // construction more ergonomic?
+            let pm = if let Some(pm) = Self::package_manager() {
+                pm
+            } else {
+                tracing::warn!(
+                    "Failed to find linux package manager to install required dependencies"
+                );
+                return;
+            };
+            let mut pm_command = std::process::Command::new(&pm);
+            if pm == "pacman" {
+                pm_command.arg("-S");
+            } else {
+                pm_command.arg("install");
+            }
+            pm_command.arg(binary.as_ref());
+            match pm_command.output() {
                 Ok(output) => {
                     tracing::info!("Installed {:?} with output: {}", binary, output.status)
                 }
