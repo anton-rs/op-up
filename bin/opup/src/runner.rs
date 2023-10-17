@@ -18,18 +18,3 @@ where
     tokio_runtime.block_on(fut)?;
     Ok(())
 }
-
-/// Run a future until ctrl-c is pressed.
-pub fn run_blocking_until_ctrl_c<F>(fut: F) -> Result<()>
-where
-    F: Future<Output = Result<()>> + Send + 'static,
-{
-    let tokio_runtime = tokio_runtime()?;
-    let handle = tokio_runtime.handle().clone();
-    let fut = tokio_runtime
-        .handle()
-        .spawn_blocking(move || handle.block_on(fut));
-    tokio_runtime.block_on(async move { fut.await.expect("join task") })?;
-    std::thread::spawn(move || drop(tokio_runtime));
-    Ok(())
-}
