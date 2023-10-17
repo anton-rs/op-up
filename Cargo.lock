@@ -1785,6 +1785,7 @@ dependencies = [
  "op-contracts",
  "op-primitives",
  "op-stages",
+ "platforms",
  "prettytable-rs",
  "semver",
  "serde",
@@ -1956,6 +1957,12 @@ name = "pkg-config"
 version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
+
+[[package]]
+name = "platforms"
+version = "3.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4503fa043bf02cee09a9582e9554b4c6403b2ef55e4612e96561d294419429f8"
 
 [[package]]
 name = "portable-atomic"

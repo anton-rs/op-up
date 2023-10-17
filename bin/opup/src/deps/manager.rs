@@ -67,6 +67,32 @@ impl DependencyManager {
         P: AsRef<Path> + std::fmt::Debug,
     {
         tracing::info!(target: "deps", "Installing {:?}", binary);
+        if cfg!(target_os = "macos") {
+            let mut brew_command = std::process::Command::new("brew");
+            brew_command.arg("install");
+            brew_command.arg(binary.as_ref());
+            match brew_command.output() {
+                Ok(output) => {
+                    tracing::info!("Installed {:?} with output: {}", binary, output.status)
+                }
+                Err(e) => tracing::warn!("Failed to install {:?} with err: {:?}", binary, e),
+            }
+        } else if cfg!(target_os = "linux") {
+            let mut apt_command = std::process::Command::new("apt");
+            apt_command.arg("install");
+            apt_command.arg(binary.as_ref());
+            match apt_command.output() {
+                Ok(output) => {
+                    tracing::info!("Installed {:?} with output: {}", binary, output.status)
+                }
+                Err(e) => tracing::warn!("Failed to install {:?} with err: {:?}", binary, e),
+            }
+        } else {
+            tracing::warn!(
+                "Automatic installed not supported for OS: {}",
+                std::env::consts::OS
+            );
+        }
     }
 
     /// Installs foundry and all it's dependencies.
