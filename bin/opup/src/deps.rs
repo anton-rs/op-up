@@ -28,7 +28,7 @@ impl DependencyManager {
     #[cfg(target_os = "linux")]
     pub fn package_manager() -> Option<String> {
         for pm in Self::LINUX_PACKAGE_MANAGERS {
-            if Self::check_binary(pm).is_some() {
+            if Self::check_binary(pm.to_string()).is_some() {
                 Some(pm.to_string())
             }
         }
