@@ -40,8 +40,6 @@ pub fn run() -> Result<()> {
 
     crate::banners::banner()?;
 
-    crate::runner::run_until_ctrl_c(async { crate::deps::DependencyManager::sync().await })?;
-
     // Dispatch on the specified subcommand,
     // running the `up` subcommand by default.
     match command {
@@ -53,6 +51,10 @@ pub fn run() -> Result<()> {
             Command::Nuke => unimplemented!("nuke command not yet implemented"),
             Command::Clean => unimplemented!("clean command not yet implemented"),
             Command::Deps => {
+                tracing::info!(target: "opup", "Installing dependencies...");
+                crate::runner::run_until_ctrl_c(async {
+                    crate::deps::DependencyManager::sync().await
+                })?;
                 tracing::info!(target: "opup", "Dependencies installed.");
                 Ok(())
             }
