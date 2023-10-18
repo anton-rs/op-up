@@ -29,6 +29,8 @@ pub enum Command {
     Clean,
     /// List op-up docker containers
     List,
+    /// Install Dependencies
+    Deps,
 }
 
 pub fn run() -> Result<()> {
@@ -48,6 +50,14 @@ pub fn run() -> Result<()> {
             Command::Down => unimplemented!("down command not yet implemented"),
             Command::Nuke => unimplemented!("nuke command not yet implemented"),
             Command::Clean => unimplemented!("clean command not yet implemented"),
+            Command::Deps => {
+                tracing::info!(target: "opup", "Installing dependencies...");
+                crate::runner::run_until_ctrl_c(async {
+                    crate::deps::DependencyManager::sync().await
+                })?;
+                tracing::info!(target: "opup", "Dependencies installed.");
+                Ok(())
+            }
         },
     }
 }

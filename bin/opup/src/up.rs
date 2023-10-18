@@ -39,6 +39,8 @@ impl UpCommand {
     async fn execute(&self) -> Result<()> {
         tracing::info!("bootstrapping op stack");
 
+        crate::deps::DependencyManager::sync().await?;
+
         if self.devnet {
             tracing::info!("Building default devnet stack");
             let config = Config::default().force_overwrites(self.force);

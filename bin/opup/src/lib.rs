@@ -1,6 +1,9 @@
 /// The CLI entrypoint for the binary.
 pub mod cli;
 
+/// Dependency manager.
+pub mod deps;
+
 // Internally Exposed Modules
 pub(crate) mod banners;
 pub(crate) mod list;
