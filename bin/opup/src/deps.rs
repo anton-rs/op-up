@@ -1,5 +1,8 @@
 use eyre::Result;
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    process::Command,
+};
 use tracing::instrument;
 
 /// DependencyManager
@@ -13,7 +16,7 @@ use tracing::instrument;
 /// ```rust
 /// use opup::deps::DependencyManager;
 ///
-/// assert_eq!(DependencyManager::check_binary("cargo").is_some(), true);
+/// assert!(DependencyManager::check_binary("cargo").is_some());
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct DependencyManager;
@@ -22,21 +25,27 @@ impl DependencyManager {
     /// Default binaries to check for.
     pub const DEFAULT_BINARIES: &'static [&'static str] = &["docker", "curl", "tar"];
 
+    /// Linux package managers to check for.
     #[cfg(target_os = "linux")]
-    pub const LINUX_PACKAGE_MANAGERS: &'static [&'static str] = &["apt", "yum", "pacman"];
+    pub const LINUX_PACKAGE_MANAGERS: &'static [(&'static str, &'static str)] =
+        &[("apt", "install"), ("yum", "install"), ("pacman", "-S")];
 
+    /// Checks for a package manager in the user's PATH.
+    /// Returns the package manager name and the required argument to install a package.
     #[cfg(target_os = "linux")]
-    pub fn package_manager() -> Option<String> {
-        for pm in Self::LINUX_PACKAGE_MANAGERS {
-            if Self::check_binary(pm.to_string()).is_some() {
-                Some(pm.to_string())
+    pub fn package_manager() -> Option<(&'static str, &'static str)> {
+        for (pm_name, pm_arg) in Self::LINUX_PACKAGE_MANAGERS {
+            if Self::check_binary(*pm_name).is_some() {
+                return Some((*pm_name, *pm_arg));
             }
         }
         None
     }
 
+    /// Checks for a package manager in the user's PATH.
+    /// This is a no-op on non-linux platforms.
     #[cfg(not(target_os = "linux"))]
-    pub fn package_manager() -> Option<String> {
+    pub fn package_manager() -> Option<(&'static str, &'static str)> {
         None
     }
 
@@ -48,6 +57,7 @@ impl DependencyManager {
             if Self::check_binary(*binary).is_some() {
                 continue;
             }
+
             tracing::warn!("{} not found", binary);
             match inquire::Confirm::new(&format!("Missing \"{}\" in path, install?", binary))
                 .prompt()
@@ -75,7 +85,7 @@ impl DependencyManager {
         tracing::info!("Installing Solidity version {:?}", version);
         let _ = svm_lib::install(&version).await?;
         tracing::info!("Solidity version {:?} installed", version);
-        return Ok(());
+        Ok(())
     }
 
     /// Installs a binary.
@@ -85,43 +95,32 @@ impl DependencyManager {
         P: AsRef<Path> + std::fmt::Debug,
     {
         tracing::info!(target: "deps", "Installing {:?}", binary);
+
         if cfg!(target_os = "macos") {
-            let mut brew_command = std::process::Command::new("brew");
-            brew_command.arg("install");
-            brew_command.arg(binary.as_ref());
-            match brew_command.output() {
-                Ok(output) => {
-                    tracing::info!("Installed {:?} with output: {}", binary, output.status)
-                }
+            match Command::new("brew")
+                .arg("install")
+                .arg(binary.as_ref())
+                .output()
+            {
+                Ok(out) => tracing::info!("Installed {:?} with output: {:?}", binary, out.status),
                 Err(e) => tracing::warn!("Failed to install {:?} with err: {:?}", binary, e),
             }
         } else if cfg!(target_os = "linux") {
-            // TODO: this is very ugly, can we make package manager and install command
-            // construction more ergonomic?
-            let pm = if let Some(pm) = Self::package_manager() {
-                pm
-            } else {
-                tracing::warn!(
-                    "Failed to find linux package manager to install required dependencies"
-                );
+            let Some((pm_name, pm_arg)) = Self::package_manager() else {
+                tracing::warn!("Failed to find package manager to install required dependencies");
                 return;
             };
-            let mut pm_command = std::process::Command::new(&pm);
-            if pm == "pacman" {
-                pm_command.arg("-S");
-            } else {
-                pm_command.arg("install");
-            }
-            pm_command.arg(binary.as_ref());
-            match pm_command.output() {
-                Ok(output) => {
-                    tracing::info!("Installed {:?} with output: {}", binary, output.status)
-                }
+            match Command::new(pm_name)
+                .arg(pm_arg)
+                .arg(binary.as_ref())
+                .output()
+            {
+                Ok(out) => tracing::info!("Installed {:?} with output: {:?}", binary, out.status),
                 Err(e) => tracing::warn!("Failed to install {:?} with err: {:?}", binary, e),
             }
         } else {
             tracing::warn!(
-                "Automatic installed not supported for OS: {}",
+                "Automatic install not supported for OS: {}",
                 std::env::consts::OS
             );
         }
@@ -136,12 +135,12 @@ impl DependencyManager {
         }
         tracing::info!("Installing Foundry");
 
-        let mut curl_command = std::process::Command::new("curl");
+        let mut curl_command = Command::new("curl");
         curl_command.arg("-L");
         curl_command.arg("https://foundry.paradigm.xyz");
         curl_command.stdout(std::process::Stdio::piped());
 
-        let mut bash_command = std::process::Command::new("bash");
+        let mut bash_command = Command::new("bash");
         let spawned = curl_command.spawn()?;
         let output = spawned
             .stdout
@@ -151,11 +150,11 @@ impl DependencyManager {
         let output = bash_command.output()?;
         tracing::info!("Foundry installed with output: {}", output.status);
 
-        let mut foundryup_command = std::process::Command::new("foundryup");
+        let mut foundryup_command = Command::new("foundryup");
         let output = foundryup_command.output()?;
         tracing::info!("Foundryup executed with output: {}", output.status);
 
-        return Ok(());
+        Ok(())
     }
 
     /// Checks for an individual binary in the user's PATH.
@@ -182,6 +181,6 @@ mod tests {
 
     #[test]
     fn test_check_binary() {
-        assert_eq!(DependencyManager::check_binary("cargo").is_some(), true);
+        assert!(DependencyManager::check_binary("cargo").is_some());
     }
 }
