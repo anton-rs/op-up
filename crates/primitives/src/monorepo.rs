@@ -34,7 +34,7 @@ pub struct MonorepoConfig {
 impl Default for MonorepoConfig {
     fn default() -> Self {
         Self {
-            source: MonorepoSource::Tarball,
+            source: MonorepoSource::Git,
             directory_name: "optimism".to_string(),
             git_url: "git@github.com:ethereum-optimism/optimism.git".to_string(),
             tarball_url: "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz"
@@ -49,9 +49,9 @@ impl Default for MonorepoConfig {
 #[serde(rename_all = "lowercase")]
 pub enum MonorepoSource {
     /// Clone from git.
+    #[default]
     Git,
     /// Download from a tarball archive.
-    #[default]
     Tarball,
 }
 
