@@ -1,6 +1,6 @@
 use eyre::Result;
+use maplit::hashmap;
 use op_primitives::L1Client;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -73,26 +73,16 @@ impl Executor {
         let config = ContainerConfig {
             image: Some(image_name),
             working_dir: Some(working_dir.to_string_lossy().to_string()),
-            volumes: Some(HashMap::from([
-                // TODO: double check source/destination of volumes
-                ("l1_data:/db".to_string(), HashMap::new()),
-                (
-                    format!("{}:/genesis.json", l1_genesis.to_string_lossy()),
-                    HashMap::new(),
-                ),
-                (
-                    format!(
-                        "{}:/config/test-jwt-secret.txt",
-                        jwt_secret.to_string_lossy()
-                    ),
-                    HashMap::new(),
-                ),
-            ])),
-            exposed_ports: Some(HashMap::from([
-                ("8545:8545".to_string(), HashMap::new()),
-                ("8546:8546".to_string(), HashMap::new()),
-                ("7060:6060".to_string(), HashMap::new()),
-            ])),
+            volumes: Some(hashmap! {
+                "l1_data:/db".to_string() => hashmap! {},
+                format!("{}:/genesis.json", l1_genesis.to_string_lossy()) => hashmap! {},
+                format!("{}:/config/test-jwt-secret.txt", jwt_secret.to_string_lossy()) => hashmap! {}
+            }),
+            exposed_ports: Some(hashmap! {
+                "8545:8545".to_string() => hashmap! {},
+                "8546:8546".to_string() => hashmap! {},
+                "7060:6060".to_string() => hashmap! {},
+            }),
             ..Default::default()
         };
 
