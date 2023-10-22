@@ -32,7 +32,7 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
         };
 
         let container = composer
-            .create_container("test_basic_docker_composer", container_config)
+            .create_container("test_basic_docker_composer", container_config, false)
             .await?;
 
         // 3. Start running container

@@ -16,6 +16,7 @@ use bollard::{
         StartContainerOptions, StopContainerOptions,
     },
     exec::{CreateExecOptions, StartExecResults},
+    image::BuildImageOptions,
     service::{ContainerCreateResponse, ContainerSummary},
     Docker,
 };
@@ -25,6 +26,9 @@ use serde::Serialize;
 
 pub use bollard::image::CreateImageOptions;
 pub use bollard::service::ContainerConfig;
+
+/// Utilities for Docker operations
+mod utils;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]
@@ -98,11 +102,42 @@ impl Composer {
         }
     }
 
+    /// Build a Docker image from a build context tarball.
+    ///
+    /// The compressed tarball can be generated with the
+    /// [`dockerfile_build_context!`] macro.
+    pub async fn build_image(
+        &self,
+        name: &str,
+        dockerfile: &str,
+        build_context_files: Vec<(&str, &[u8])>,
+    ) -> Result<()> {
+        let build_options = BuildImageOptions {
+            t: name,
+            dockerfile: "Dockerfile",
+            pull: true,
+            ..Default::default()
+        };
+
+        let files = utils::create_dockerfile_build_context(dockerfile, build_context_files)?;
+        let mut image_build_stream =
+            self.daemon
+                .build_image(build_options, None, Some(files.into()));
+
+        while let Some(build_info) = image_build_stream.next().await {
+            println!("Response: {:?}", build_info);
+            tracing::debug!(target: "composer", "Build info: {:?}", build_info);
+        }
+
+        Ok(())
+    }
+
     /// Create a Docker container for the specified OP Stack component
     pub async fn create_container(
         &self,
         name: &str,
         mut config: ContainerConfig,
+        overwrite: bool,
     ) -> Result<ContainerCreateResponse> {
         let create_options = CreateContainerOptions {
             name,
@@ -115,24 +150,38 @@ impl Composer {
             "op-up".to_string(),
         );
 
-        // Check if a container already exists with the specified name.
-        // If so, return the existing container ID instead
+        // Check if a container already exists with the specified name. If it does:
+        // - If overwrite is true, remove the existing container and create a new one.
+        // - If overwrite is false, return the existing container ID.
         let containers = self.list_containers(None).await?;
         if let Some(container) = containers.iter().find(|container| {
             container
                 .names
                 .as_ref()
-                .map(|names| names.iter().any(|n| n == name))
+                .map(|names| {
+                    names
+                        .iter()
+                        .any(|n| n == name || n == &format!("/{}", name))
+                })
                 .unwrap_or(false)
         }) {
             tracing::debug!(target: "composer", "Container {} already exists", name);
-            return Ok(ContainerCreateResponse {
-                id: container
-                    .id
-                    .clone()
-                    .ok_or_else(|| eyre::eyre!("No container ID found"))?,
-                warnings: vec![],
-            });
+            let id = container
+                .id
+                .clone()
+                .ok_or_else(|| eyre::eyre!("No container ID found"))?;
+
+            if overwrite {
+                self.daemon
+                    .remove_container(&id, None::<RemoveContainerOptions>)
+                    .await?;
+                tracing::debug!(target: "composer", "Removed existing docker container {}", name);
+            } else {
+                return Ok(ContainerCreateResponse {
+                    id,
+                    warnings: vec![],
+                });
+            }
         }
 
         let res = self

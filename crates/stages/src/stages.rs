@@ -59,10 +59,7 @@ impl Stages<'_> {
         composer: Arc<op_composer::Composer>,
     ) -> Vec<Box<dyn crate::Stage>> {
         let genesis_timestamp = genesis::current_timestamp();
-        let l1_client = self.config.l1_client.to_string();
-        let l2_client = self.config.l2_client.to_string();
-        let rollup_client = self.config.rollup_client.to_string();
-        let challenge_agent = self.config.challenger.to_string();
+
         vec![
             Box::new(directories::Directories::new(
                 Arc::clone(&artifacts),
@@ -83,7 +80,7 @@ impl Stages<'_> {
             )),
             Box::new(l1_exec::Executor::new(
                 self.config.l1_client_port,
-                l1_client,
+                self.config.l1_client,
                 composer,
                 Arc::clone(&artifacts),
             )),
@@ -94,11 +91,11 @@ impl Stages<'_> {
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(
                 self.config.l2_client_port,
-                l2_client,
+                self.config.l2_client.to_string(),
             )),
             Box::new(rollup::Rollup::new(
                 self.config.rollup_client_port,
-                rollup_client,
+                self.config.rollup_client.to_string(),
             )),
             Box::new(proposer::Proposer::new(Arc::clone(&artifacts))),
             Box::new(batcher::Batcher::new(
@@ -107,7 +104,7 @@ impl Stages<'_> {
             )),
             Box::new(challenger::Challenger::new(
                 Arc::clone(&artifacts),
-                challenge_agent,
+                self.config.challenger.to_string(),
             )),
             Box::new(stateviz::Stateviz::new(Arc::clone(&artifacts))),
         ]

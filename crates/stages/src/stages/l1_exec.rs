@@ -1,5 +1,5 @@
 use eyre::Result;
-use op_composer::CreateImageOptions;
+use op_primitives::L1Client;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -13,7 +13,7 @@ use op_primitives::Artifacts;
 #[derive(Debug)]
 pub struct Executor {
     l1_port: Option<u16>,
-    l1_client: String,
+    l1_client: L1Client,
     l1_exec: Arc<Composer>,
     artifacts: Arc<Artifacts>,
 }
@@ -24,25 +24,57 @@ impl crate::Stage for Executor {
     async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing l1 execution client stage");
 
-        let image_name = "ethereum/client-go:v1.12.2".to_string();
+        match self.l1_client {
+            L1Client::Geth => self.start_geth().await?,
+            _ => unimplemented!("l1 client not implemented: {}", self.l1_client),
+        }
+
+        Ok(())
+    }
+}
+
+impl Executor {
+    /// Creates a new stage.
+    pub fn new(
+        l1_port: Option<u16>,
+        l1_client: L1Client,
+        l1_exec: Arc<Composer>,
+        artifacts: Arc<Artifacts>,
+    ) -> Self {
+        Self {
+            l1_port,
+            l1_client,
+            l1_exec,
+            artifacts,
+        }
+    }
+
+    /// Starts Geth in a docker container.
+    pub async fn start_geth(&self) -> Result<()> {
+        let image_name = "opup-geth".to_string();
         let working_dir = project_root::get_project_root()?.join("docker");
         let l1_genesis = self.artifacts.l1_genesis();
         let jwt_secret = self.artifacts.jwt_secret();
 
-        let image_config = CreateImageOptions {
-            from_image: image_name.as_str(),
-            ..Default::default()
-        };
-        self.l1_exec.create_image(image_config).await?;
+        let dockerfile = r#"
+            FROM ethereum/client-go:v1.12.2
+            RUN apk add --no-cache jq
+            COPY geth-entrypoint.sh /geth-entrypoint.sh
+            VOLUME ["/db"]
+            ENTRYPOINT ["/bin/sh", "/geth-entrypoint.sh"]
+        "#;
+
+        let geth_entrypoint = std::fs::read(working_dir.join("geth-entrypoint.sh"))?;
+        let build_context_files = vec![("geth-entrypoint.sh", geth_entrypoint.as_slice())];
+        self.l1_exec
+            .build_image(&image_name, dockerfile, build_context_files)
+            .await?;
 
         let config = ContainerConfig {
-            cmd: Some(vec![
-                "/bin/sh".to_string(), // TODO: fix this: we need to place here the actual geth start command
-                "geth-entrypoint.sh".to_string(),
-            ]),
             image: Some(image_name),
             working_dir: Some(working_dir.to_string_lossy().to_string()),
             volumes: Some(HashMap::from([
+                // TODO: double check source/destination of volumes
                 ("l1_data:/db".to_string(), HashMap::new()),
                 (
                     format!("{}:/genesis.json", l1_genesis.to_string_lossy()),
@@ -64,9 +96,11 @@ impl crate::Stage for Executor {
             ..Default::default()
         };
 
+        dbg!(&config);
+
         let container_id = self
             .l1_exec
-            .create_container(&self.l1_client, config)
+            .create_container(&self.l1_client.to_string(), config, true)
             .await?
             .id;
 
@@ -88,56 +122,3 @@ impl crate::Stage for Executor {
         Ok(())
     }
 }
-
-impl Executor {
-    /// Creates a new stage.
-    pub fn new(
-        l1_port: Option<u16>,
-        l1_client: String,
-        l1_exec: Arc<Composer>,
-        artifacts: Arc<Artifacts>,
-    ) -> Self {
-        Self {
-            l1_port,
-            l1_client,
-            l1_exec,
-            artifacts,
-        }
-    }
-}
-
-// For reference, here is the geth startup command in geth-entrypoint.sh:
-//
-// exec geth \
-// 	--datadir="$GETH_DATA_DIR" \
-// 	--verbosity="$VERBOSITY" \
-// 	--http \
-// 	--http.corsdomain="*" \
-// 	--http.vhosts="*" \
-// 	--http.addr=0.0.0.0 \
-// 	--http.port="$RPC_PORT" \
-// 	--http.api=web3,debug,eth,txpool,net,engine \
-// 	--ws \
-// 	--ws.addr=0.0.0.0 \
-// 	--ws.port="$WS_PORT" \
-// 	--ws.origins="*" \
-// 	--ws.api=debug,eth,txpool,net,engine \
-// 	--syncmode=full \
-// 	--nodiscover \
-// 	--maxpeers=1 \
-// 	--networkid=$CHAIN_ID \
-// 	--unlock=$BLOCK_SIGNER_ADDRESS \
-// 	--mine \
-// 	--miner.etherbase=$BLOCK_SIGNER_ADDRESS \
-// 	--password="$GETH_DATA_DIR"/password \
-// 	--allow-insecure-unlock \
-// 	--rpc.allow-unprotected-txs \
-// 	--authrpc.addr="0.0.0.0" \
-// 	--authrpc.port="8551" \
-// 	--authrpc.vhosts="*" \
-// 	--authrpc.jwtsecret=/config/test-jwt-secret.txt \
-// 	--gcmode=archive \
-// 	--metrics \
-// 	--metrics.addr=0.0.0.0 \
-// 	--metrics.port=6060 \
-// 	"$@"

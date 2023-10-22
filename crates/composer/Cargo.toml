@@ -18,6 +18,8 @@ serde.workspace = true
 tokio = { version = "1.11.0", features = ["full"] }
 futures-util = "0.3.28"
 bollard = "0.15.0"
+flate2 = "1.0.28"
+tar = "0.4.40"
 
 [dev-dependencies]
 tracing-subscriber.workspace = true
