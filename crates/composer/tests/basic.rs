@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use bollard::{image::CreateImageOptions, service::ContainerConfig};
-use op_composer::Composer;
+use bollard::image::CreateImageOptions;
+use op_composer::{Composer, Config};
 
 /// This is a basic test of the Composer functionality to create and start a Docker container, run a simple
 /// command in the container, and then stop and remove it. If the Docker daemon is not running, this test
@@ -22,7 +22,7 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
         composer.create_image(image_config).await?;
 
         // 2. Create the container with the new image
-        let container_config = ContainerConfig {
+        let container_config = Config {
             exposed_ports: Some(HashMap::<_, _>::from_iter([(
                 "7777".to_string(),
                 HashMap::new(),

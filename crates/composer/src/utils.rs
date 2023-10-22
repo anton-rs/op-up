@@ -1,5 +1,6 @@
 use std::io::Write;
 
+use bollard::service::PortBinding;
 use eyre::Result;
 use flate2::{write::GzEncoder, Compression};
 
@@ -7,7 +8,7 @@ use flate2::{write::GzEncoder, Compression};
 /// create a tarball and gzip the tarball. Returns the compressed output bytes.
 pub(crate) fn create_dockerfile_build_context(
     dockerfile: &str,
-    files: Vec<(&str, &[u8])>,
+    files: &[(&str, &[u8])],
 ) -> Result<Vec<u8>> {
     // First create a Dockerfile tarball
     let mut header = tar::Header::new_gnu();
@@ -25,7 +26,7 @@ pub(crate) fn create_dockerfile_build_context(
         header.set_size(contents.len() as u64);
         header.set_mode(0o755);
         header.set_cksum();
-        tar.append(&header, contents)?;
+        tar.append(&header, *contents)?;
     }
 
     // Finally, gzip the tarball
@@ -33,4 +34,12 @@ pub(crate) fn create_dockerfile_build_context(
     let mut c = GzEncoder::new(Vec::new(), Compression::default());
     c.write_all(&uncompressed)?;
     c.finish().map_err(Into::into)
+}
+
+/// Given a host port, bind it to the container.
+pub fn bind_host_port(host_port: u16) -> Option<Vec<PortBinding>> {
+    Some(vec![PortBinding {
+        host_ip: Some("127.0.0.1".to_string()),
+        host_port: Some(host_port.to_string()),
+    }])
 }

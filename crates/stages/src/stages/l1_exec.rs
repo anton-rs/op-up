@@ -5,8 +5,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use op_composer::Composer;
-use op_composer::ContainerConfig;
+use op_composer::{bind_host_port, Composer, Config, HostConfig};
 use op_primitives::Artifacts;
 
 /// L1 Execution Client Stage
@@ -65,23 +64,41 @@ impl Executor {
         "#;
 
         let geth_entrypoint = std::fs::read(working_dir.join("geth-entrypoint.sh"))?;
-        let build_context_files = vec![("geth-entrypoint.sh", geth_entrypoint.as_slice())];
+        let build_context_files = [("geth-entrypoint.sh", geth_entrypoint.as_slice())];
         self.l1_exec
-            .build_image(&image_name, dockerfile, build_context_files)
+            .build_image(&image_name, dockerfile, &build_context_files)
             .await?;
 
-        let config = ContainerConfig {
+        // TODO: create l1_data volume if it doesn't exist
+
+        let config = Config {
             image: Some(image_name),
             working_dir: Some(working_dir.to_string_lossy().to_string()),
-            volumes: Some(hashmap! {
-                "l1_data:/db".to_string() => hashmap! {},
-                format!("{}:/genesis.json", l1_genesis.to_string_lossy()) => hashmap! {},
-                format!("{}:/config/test-jwt-secret.txt", jwt_secret.to_string_lossy()) => hashmap! {}
-            }),
+            // volumes: Some(hashmap! {
+            //     "l1_data:/db".to_string() => hashmap! {},
+            //     format!("{}:/genesis.json", l1_genesis.to_string_lossy()) => hashmap! {},
+            //     format!("{}:/config/test-jwt-secret.txt", jwt_secret.to_string_lossy()) => hashmap! {}
+            // }),
             exposed_ports: Some(hashmap! {
-                "8545:8545".to_string() => hashmap! {},
-                "8546:8546".to_string() => hashmap! {},
-                "7060:6060".to_string() => hashmap! {},
+                "8545".to_string() => hashmap! {},
+                "8546".to_string() => hashmap! {},
+                "6060".to_string() => hashmap! {},
+            }),
+            host_config: Some(HostConfig {
+                port_bindings: Some(hashmap! {
+                    "8545".to_string() => bind_host_port(8545),
+                    "8546".to_string() => bind_host_port(8546),
+                    "6060".to_string() => bind_host_port(7060), // TODO: double check this port
+                }),
+                binds: Some(vec![
+                    "l1_data:/db".to_string(),
+                    format!("{}:/genesis.json", l1_genesis.to_string_lossy()),
+                    format!(
+                        "{}:/config/test-jwt-secret.txt",
+                        jwt_secret.to_string_lossy()
+                    ),
+                ]),
+                ..Default::default()
             }),
             ..Default::default()
         };

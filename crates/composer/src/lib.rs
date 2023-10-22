@@ -24,8 +24,10 @@ use eyre::{bail, Result};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Serialize;
 
+pub use bollard::container::Config;
 pub use bollard::image::CreateImageOptions;
-pub use bollard::service::ContainerConfig;
+pub use bollard::service::HostConfig;
+pub use utils::bind_host_port;
 
 /// Utilities for Docker operations
 mod utils;
@@ -102,15 +104,12 @@ impl Composer {
         }
     }
 
-    /// Build a Docker image from a build context tarball.
-    ///
-    /// The compressed tarball can be generated with the
-    /// [`dockerfile_build_context!`] macro.
+    /// Build a Docker image from the specified Dockerfile and build context files.
     pub async fn build_image(
         &self,
         name: &str,
         dockerfile: &str,
-        build_context_files: Vec<(&str, &[u8])>,
+        build_context_files: &[(&str, &[u8])],
     ) -> Result<()> {
         let build_options = BuildImageOptions {
             t: name,
@@ -136,7 +135,7 @@ impl Composer {
     pub async fn create_container(
         &self,
         name: &str,
-        mut config: ContainerConfig,
+        mut config: Config<String>,
         overwrite: bool,
     ) -> Result<ContainerCreateResponse> {
         let create_options = CreateContainerOptions {
@@ -186,7 +185,7 @@ impl Composer {
 
         let res = self
             .daemon
-            .create_container(Some(create_options), config.into())
+            .create_container(Some(create_options), config)
             .await?;
 
         tracing::debug!(target: "composer", "Created docker container {} with ID: {}", name, res.id);
