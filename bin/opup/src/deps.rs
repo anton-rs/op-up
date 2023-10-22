@@ -82,9 +82,10 @@ impl DependencyManager {
             return Ok(());
         }
         let version = semver::Version::parse("0.8.17")?;
-        tracing::info!("Installing Solidity version {:?}", version);
+        tracing::info!("Installing Solidity version {}", version);
         let _ = svm_lib::install(&version).await?;
-        tracing::info!("Solidity version {:?} installed", version);
+        svm_lib::use_version(&version)?;
+        tracing::info!("Solidity version {} installed", version);
         Ok(())
     }
 

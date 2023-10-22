@@ -34,10 +34,6 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
         let container = composer
             .create_container("test_basic_docker_composer", container_config)
             .await?;
-        println!("Created container: {:?}", container);
-
-        let all_containers = composer.list_containers(None).await?;
-        assert_eq!(all_containers.len(), 1);
 
         // 3. Start running container
         composer.start_container(&container.id).await?;

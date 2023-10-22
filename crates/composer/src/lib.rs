@@ -16,7 +16,6 @@ use bollard::{
         StartContainerOptions, StopContainerOptions,
     },
     exec::{CreateExecOptions, StartExecResults},
-    image::CreateImageOptions,
     service::{ContainerCreateResponse, ContainerSummary},
     Docker,
 };
@@ -24,6 +23,7 @@ use eyre::{bail, Result};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Serialize;
 
+pub use bollard::image::CreateImageOptions;
 pub use bollard::service::ContainerConfig;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
@@ -85,13 +85,8 @@ impl Composer {
                 })
             })
             .try_collect::<Vec<_>>()
-            .await
-            .map_err(|e| {
-                tracing::error!(target: "composer", "Error creating docker image: {:?}", e);
-                e
-            })?;
+            .await?;
 
-        println!("res: {:?}", res);
         tracing::debug!(target: "composer", "Created docker image: {:?}", res);
 
         match res.get(0) {
@@ -119,6 +114,26 @@ impl Composer {
             "com.docker.compose.project".to_string(),
             "op-up".to_string(),
         );
+
+        // Check if a container already exists with the specified name.
+        // If so, return the existing container ID instead
+        let containers = self.list_containers(None).await?;
+        if let Some(container) = containers.iter().find(|container| {
+            container
+                .names
+                .as_ref()
+                .map(|names| names.iter().any(|n| n == name))
+                .unwrap_or(false)
+        }) {
+            tracing::debug!(target: "composer", "Container {} already exists", name);
+            return Ok(ContainerCreateResponse {
+                id: container
+                    .id
+                    .clone()
+                    .ok_or_else(|| eyre::eyre!("No container ID found"))?,
+                warnings: vec![],
+            });
+        }
 
         let res = self
             .daemon
