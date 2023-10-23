@@ -15,7 +15,7 @@
 [License]: https://img.shields.io/badge/license-MIT-7795AF.svg
 [mit-license]: https://github.com/anton-rs/op-up/blob/main/LICENSE.md
 [Docs-rs]: https://docs.rs/opup/
-[Docs]: https://img.shields.io/docsrs/morc.svg?color=319e8c&label=docs.rs
+[Docs]: https://img.shields.io/docsrs/opup.svg?color=319e8c&label=docs.rs
 
 **Composable OP Stack Orchestration System.** op-up is in https://github.com/anton-rs/op-up/labels/alpha.
 
