@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 use strum::EnumIter;
 
 /// Challenger Agent Implementations
-#[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[derive(
+    Default, Copy, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
+)]
 #[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum ChallengerAgent {

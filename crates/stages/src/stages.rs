@@ -91,11 +91,11 @@ impl Stages<'_> {
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(
                 self.config.l2_client_port,
-                self.config.l2_client.to_string(),
+                self.config.l2_client,
             )),
             Box::new(rollup::Rollup::new(
                 self.config.rollup_client_port,
-                self.config.rollup_client.to_string(),
+                self.config.rollup_client,
             )),
             Box::new(proposer::Proposer::new(Arc::clone(&artifacts))),
             Box::new(batcher::Batcher::new(
@@ -104,7 +104,7 @@ impl Stages<'_> {
             )),
             Box::new(challenger::Challenger::new(
                 Arc::clone(&artifacts),
-                self.config.challenger.to_string(),
+                self.config.challenger,
             )),
             Box::new(stateviz::Stateviz::new(Arc::clone(&artifacts))),
         ]

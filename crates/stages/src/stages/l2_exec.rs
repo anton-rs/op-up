@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use eyre::Result;
+use op_primitives::L2Client;
 use std::process::Command;
 
 /// Layer 2 Execution Client Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Executor {
     l2_port: Option<u16>,
-    l2_client: String,
+    l2_client: L2Client,
 }
 
 #[async_trait]
@@ -23,7 +24,7 @@ impl crate::Stage for Executor {
         let start_l2 = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "l2"])
             .env("PWD", &docker_dir)
-            .env("L2_CLIENT_CHOICE", &self.l2_client)
+            .env("L2_CLIENT_CHOICE", &self.l2_client.to_string())
             .current_dir(docker_dir)
             .output()?;
 
@@ -41,7 +42,7 @@ impl crate::Stage for Executor {
 
 impl Executor {
     /// Creates a new stage.
-    pub fn new(l2_port: Option<u16>, l2_client: String) -> Self {
+    pub fn new(l2_port: Option<u16>, l2_client: L2Client) -> Self {
         Self { l2_port, l2_client }
     }
 }
