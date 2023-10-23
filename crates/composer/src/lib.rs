@@ -95,7 +95,7 @@ impl Composer {
 
         tracing::debug!(target: "composer", "Created docker image: {:?}", res);
 
-        match res.get(0) {
+        match res.first() {
             Some(info) => match info.id.as_ref() {
                 Some(id) => Ok(id.clone()),
                 None => bail!("No image ID found in response"),
@@ -124,8 +124,9 @@ impl Composer {
                 .build_image(build_options, None, Some(files.into()));
 
         while let Some(build_info) = image_build_stream.next().await {
-            println!("Response: {:?}", build_info);
-            tracing::debug!(target: "composer", "Build info: {:?}", build_info);
+            let res = build_info?;
+            println!("Response: {:?}", res);
+            tracing::debug!(target: "composer", "Build info: {:?}", res);
         }
 
         Ok(())
