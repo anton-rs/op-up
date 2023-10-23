@@ -126,7 +126,6 @@ impl Composer {
 
         while let Some(build_info) = image_build_stream.next().await {
             let res = build_info?;
-            println!("Response: {:?}", res);
             tracing::debug!(target: "composer", "Build info: {:?}", res);
         }
 
