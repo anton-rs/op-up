@@ -1,24 +1,32 @@
 # op-up
 
-[![CI](https://github.com/anton-rs/op-up/actions/workflows/ci.yml/badge.svg)][gh-ci]
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)][mit-license]
-[![Chat][tg-badge]][tg-url]
+[![Build Status]][actions]
+[![License]][mit-license]
+[![Docs]][Docs-rs]
+[![Latest Version]][crates.io]
+[![rustc 1.31+]][Rust 1.31]
 
+[Build Status]: https://img.shields.io/github/actions/workflow/status/anton-rs/op-up/ci.yml?branch=main
+[actions]: https://github.com/anton-rs/op-up/actions?query=branch%3Amain
+[Latest Version]: https://img.shields.io/crates/v/opup.svg
+[crates.io]: https://crates.io/crates/opup
+[rustc 1.31+]: https://img.shields.io/badge/rustc_1.31+-lightgray.svg
+[Rust 1.31]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
+[License]: https://img.shields.io/badge/license-MIT-7795AF.svg
 [mit-license]: https://github.com/anton-rs/op-up/blob/main/LICENSE.md
-[gh-ci]: https://github.com/anton-rs/op-up/actions/workflows/ci.yml
-[tg-url]: https://t.me/+XR8_p3qjzoFiMjEx
-[tg-badge]: https://img.shields.io/badge/chat-telegram-blue
+[Docs-rs]: https://docs.rs/opup/
+[Docs]: https://img.shields.io/docsrs/morc.svg?color=319e8c&label=docs.rs
 
-**Composable OP Stack Orchestration System**
+**Composable OP Stack Orchestration System.** op-up is in https://github.com/anton-rs/op-up/labels/alpha.
 
-![](./etc/op-up-banner.png)
+![](https://raw.githubusercontent.com/anton-rs/op-up/main/etc/op-up-banner.png)
 
-**[Install](./docs/install/installation.md)**
-| [User Book](https://opup.anton.systems)
-| [Developer Docs](./docs/developers/developers.md)
-| [Crate Docs](https://crates.io/crates/opup)
-
-_The project is still work in progress, see the [disclaimer below](#status-httpsgithubcomanton-rsop-uplabelsalpha)._
+**[Install](#usage)**
+| [User Docs](#what-is-op-up)
+| [Crate Docs][crates.io]
+| [Reference][Docs-rs]
+| [Contributing](#contributing)
+| [License](#license)
 
 ## What is op-up?
 
@@ -107,25 +115,7 @@ cargo run -- nuke
 By building with Rust's [crate system](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html),
 `op-up` can easily be used as a library in an extensible way.
 
-## Status https://github.com/anton-rs/op-up/labels/alpha
-
-`op-up` is **not ready for production use**.
-
-Local and devnet experimentation is highly encouraged.
-New issues are also welcome.
-
-We appreciate your patience until we release the first version of `op-up`.
-
-In the meantime, contribute, chat with us [on telegram][tg-url], and most
-importantly, have fun!
-
-## Troubleshooting
-
-Please check if your issue is covered in the [troubleshooting docs](./docs/developers/troubleshooting.md).
-
-If not, [open an issue](https://github.com/anton-rs/op-up/issues/new) with all possible relevant details.
-
-## Contributions & Bug Reports
+## Contributing
 
 Please report any bugs or issues you encounter by [opening a github issue](https://github.com/anton-rs/op-up/issues/new).
 
