@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use op_composer::{bind_host_port, Composer, Config, HostConfig};
+use op_composer::{bind_host_port, Composer, Config, CreateVolumeOptions, HostConfig};
 use op_primitives::Artifacts;
 
 /// L1 Execution Client Stage
@@ -53,7 +53,9 @@ impl Executor {
         let image_name = "opup-geth".to_string();
         let working_dir = project_root::get_project_root()?.join("docker");
         let l1_genesis = self.artifacts.l1_genesis();
+        let l1_genesis = l1_genesis.to_string_lossy();
         let jwt_secret = self.artifacts.jwt_secret();
+        let jwt_secret = jwt_secret.to_string_lossy();
 
         let dockerfile = r#"
             FROM ethereum/client-go:v1.12.2
@@ -69,21 +71,22 @@ impl Executor {
             .build_image(&image_name, dockerfile, &build_context_files)
             .await?;
 
-        // TODO: create l1_data volume if it doesn't exist
+        let l1_data_volume = CreateVolumeOptions {
+            name: "l1_data",
+            driver: "local",
+            ..Default::default()
+        };
+        self.l1_exec.create_volume(l1_data_volume).await?;
 
         let config = Config {
             image: Some(image_name),
             working_dir: Some(working_dir.to_string_lossy().to_string()),
-            // volumes: Some(hashmap! {
-            //     "l1_data:/db".to_string() => hashmap! {},
-            //     format!("{}:/genesis.json", l1_genesis.to_string_lossy()) => hashmap! {},
-            //     format!("{}:/config/test-jwt-secret.txt", jwt_secret.to_string_lossy()) => hashmap! {}
-            // }),
             exposed_ports: Some(hashmap! {
                 "8545".to_string() => hashmap! {},
                 "8546".to_string() => hashmap! {},
                 "6060".to_string() => hashmap! {},
             }),
+            // TODO: add env vars to change values in entrypoint script
             host_config: Some(HostConfig {
                 port_bindings: Some(hashmap! {
                     "8545".to_string() => bind_host_port(8545),
@@ -92,18 +95,13 @@ impl Executor {
                 }),
                 binds: Some(vec![
                     "l1_data:/db".to_string(),
-                    format!("{}:/genesis.json", l1_genesis.to_string_lossy()),
-                    format!(
-                        "{}:/config/test-jwt-secret.txt",
-                        jwt_secret.to_string_lossy()
-                    ),
+                    format!("{}:/genesis.json", l1_genesis),
+                    format!("{}:/config/test-jwt-secret.txt", jwt_secret),
                 ]),
                 ..Default::default()
             }),
             ..Default::default()
         };
-
-        dbg!(&config);
 
         let container_id = self
             .l1_exec

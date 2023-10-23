@@ -76,6 +76,7 @@ impl Stages<'_> {
             )),
             Box::new(l1_genesis::L1Genesis::new(
                 Arc::clone(&monorepo),
+                Arc::clone(&artifacts),
                 genesis_timestamp,
             )),
             Box::new(l1_exec::Executor::new(

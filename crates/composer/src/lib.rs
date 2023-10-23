@@ -17,7 +17,7 @@ use bollard::{
     },
     exec::{CreateExecOptions, StartExecResults},
     image::BuildImageOptions,
-    service::{ContainerCreateResponse, ContainerSummary},
+    service::{ContainerCreateResponse, ContainerSummary, Volume},
     Docker,
 };
 use eyre::{bail, Result};
@@ -27,6 +27,7 @@ use serde::Serialize;
 pub use bollard::container::Config;
 pub use bollard::image::CreateImageOptions;
 pub use bollard::service::HostConfig;
+pub use bollard::volume::CreateVolumeOptions;
 pub use utils::bind_host_port;
 
 /// Utilities for Docker operations
@@ -130,6 +131,14 @@ impl Composer {
         }
 
         Ok(())
+    }
+
+    /// Creates a Docker volume with the specified options.
+    pub async fn create_volume<T>(&self, config: CreateVolumeOptions<T>) -> Result<Volume>
+    where
+        T: Into<String> + Serialize + Eq + std::hash::Hash,
+    {
+        self.daemon.create_volume(config).await.map_err(Into::into)
     }
 
     /// Create a Docker container for the specified OP Stack component
