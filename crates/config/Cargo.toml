@@ -11,7 +11,7 @@ homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
-op-primitives = { path = "../primitives" }
+op-primitives = { version = "0.1.0", path = "../primitives" }
 
 strum.workspace = true
 inquire.workspace = true
