@@ -24,11 +24,9 @@ impl crate::Stage for Executor {
         tracing::info!(target: "stages", "Executing l1 execution client stage");
 
         match self.l1_client {
-            L1Client::Geth => self.start_geth().await?,
+            L1Client::Geth => self.start_geth().await,
             _ => unimplemented!("l1 client not implemented: {}", self.l1_client),
         }
-
-        Ok(())
     }
 }
 
@@ -48,9 +46,9 @@ impl Executor {
         }
     }
 
-    /// Starts Geth in a docker container.
+    /// Starts Geth in a Docker container.
     pub async fn start_geth(&self) -> Result<()> {
-        let image_name = "opup-geth".to_string();
+        let image_name = "opup-l1-geth".to_string();
         let working_dir = project_root::get_project_root()?.join("docker");
         let l1_genesis = self.artifacts.l1_genesis();
         let l1_genesis = l1_genesis.to_string_lossy();
@@ -91,7 +89,7 @@ impl Executor {
                 port_bindings: Some(hashmap! {
                     "8545".to_string() => bind_host_port(8545),
                     "8546".to_string() => bind_host_port(8546),
-                    "6060".to_string() => bind_host_port(7060), // TODO: double check this port
+                    "6060".to_string() => bind_host_port(7060),
                 }),
                 binds: Some(vec![
                     "l1_data:/db".to_string(),
@@ -119,10 +117,6 @@ impl Executor {
         let l1_port = self.l1_port.unwrap_or(op_config::L1_PORT);
         crate::net::wait_up(l1_port, 10, 3)?;
         tracing::info!(target: "stages", "l1 container started on port: {}", l1_port);
-
-        // todo: do we need to do block here
-        // can we wait for the l1 client to be ready by polling?
-        std::thread::sleep(std::time::Duration::from_secs(10));
 
         Ok(())
     }

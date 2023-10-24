@@ -39,7 +39,7 @@ pub(crate) fn create_dockerfile_build_context(
 /// Given a host port, bind it to the container.
 pub fn bind_host_port(host_port: u16) -> Option<Vec<PortBinding>> {
     Some(vec![PortBinding {
-        host_ip: Some("127.0.0.1".to_string()),
+        host_ip: None,
         host_port: Some(host_port.to_string()),
     }])
 }
