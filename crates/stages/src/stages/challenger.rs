@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use eyre::Result;
-use op_primitives::Artifacts;
+use op_primitives::{Artifacts, ChallengerAgent};
 use std::process::Command;
 use std::sync::Arc;
 
@@ -8,7 +8,7 @@ use std::sync::Arc;
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Challenger {
     artifacts: Arc<Artifacts>,
-    challenger: String,
+    challenger: ChallengerAgent,
 }
 
 #[async_trait]
@@ -30,7 +30,7 @@ impl crate::Stage for Challenger {
             .env("PWD", &docker_dir)
             .env("L2OO_ADDRESS", addresses["L2OutputOracleProxy"].to_string())
             .env("DGF_ADDRESS", addresses["DisputeGameFactory"].to_string())
-            .env("CHALLENGER_AGENT_CHOICE", &self.challenger)
+            .env("CHALLENGER_AGENT_CHOICE", &self.challenger.to_string())
             .current_dir(docker_dir)
             .output()?;
 
@@ -48,7 +48,7 @@ impl crate::Stage for Challenger {
 
 impl Challenger {
     /// Creates a new challenger stage.
-    pub fn new(artifacts: Arc<Artifacts>, challenger: String) -> Self {
+    pub fn new(artifacts: Arc<Artifacts>, challenger: ChallengerAgent) -> Self {
         Self {
             artifacts,
             challenger,

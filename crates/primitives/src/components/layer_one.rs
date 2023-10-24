@@ -7,7 +7,9 @@ use strum::EnumIter;
 /// L1 Client
 ///
 /// The OP Stack L1 client is an L1 execution client.
-#[derive(Default, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter)]
+#[derive(
+    Default, Copy, Clone, PartialEq, EnumVariantsStrings, Deserialize, Serialize, EnumIter,
+)]
 #[serde(rename_all = "kebab-case")]
 #[enum_variants_strings_transform(transform = "kebab_case")]
 pub enum L1Client {

@@ -16,15 +16,22 @@ use bollard::{
         StartContainerOptions, StopContainerOptions,
     },
     exec::{CreateExecOptions, StartExecResults},
-    image::CreateImageOptions,
-    service::{ContainerCreateResponse, ContainerSummary},
+    image::BuildImageOptions,
+    service::{ContainerCreateResponse, ContainerSummary, Volume},
     Docker,
 };
 use eyre::{bail, Result};
 use futures_util::{StreamExt, TryStreamExt};
 use serde::Serialize;
 
-pub use bollard::service::ContainerConfig;
+pub use bollard::container::Config;
+pub use bollard::image::CreateImageOptions;
+pub use bollard::service::HostConfig;
+pub use bollard::volume::CreateVolumeOptions;
+pub use utils::bind_host_port;
+
+/// Utilities for Docker operations
+mod utils;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]
@@ -85,16 +92,11 @@ impl Composer {
                 })
             })
             .try_collect::<Vec<_>>()
-            .await
-            .map_err(|e| {
-                tracing::error!(target: "composer", "Error creating docker image: {:?}", e);
-                e
-            })?;
+            .await?;
 
-        println!("res: {:?}", res);
         tracing::debug!(target: "composer", "Created docker image: {:?}", res);
 
-        match res.get(0) {
+        match res.first() {
             Some(info) => match info.id.as_ref() {
                 Some(id) => Ok(id.clone()),
                 None => bail!("No image ID found in response"),
@@ -103,11 +105,47 @@ impl Composer {
         }
     }
 
+    /// Build a Docker image from the specified Dockerfile and build context files.
+    pub async fn build_image(
+        &self,
+        name: &str,
+        dockerfile: &str,
+        build_context_files: &[(&str, &[u8])],
+    ) -> Result<()> {
+        let build_options = BuildImageOptions {
+            t: name,
+            dockerfile: "Dockerfile",
+            pull: true,
+            ..Default::default()
+        };
+
+        let files = utils::create_dockerfile_build_context(dockerfile, build_context_files)?;
+        let mut image_build_stream =
+            self.daemon
+                .build_image(build_options, None, Some(files.into()));
+
+        while let Some(build_info) = image_build_stream.next().await {
+            let res = build_info?;
+            tracing::debug!(target: "composer", "Build info: {:?}", res);
+        }
+
+        Ok(())
+    }
+
+    /// Creates a Docker volume with the specified options.
+    pub async fn create_volume<T>(&self, config: CreateVolumeOptions<T>) -> Result<Volume>
+    where
+        T: Into<String> + Serialize + Eq + std::hash::Hash,
+    {
+        self.daemon.create_volume(config).await.map_err(Into::into)
+    }
+
     /// Create a Docker container for the specified OP Stack component
     pub async fn create_container(
         &self,
         name: &str,
-        mut config: ContainerConfig,
+        mut config: Config<String>,
+        overwrite: bool,
     ) -> Result<ContainerCreateResponse> {
         let create_options = CreateContainerOptions {
             name,
@@ -120,9 +158,43 @@ impl Composer {
             "op-up".to_string(),
         );
 
+        // Check if a container already exists with the specified name. If it does:
+        // - If overwrite is true, remove the existing container and create a new one.
+        // - If overwrite is false, return the existing container ID.
+        let containers = self.list_containers(None).await?;
+        if let Some(container) = containers.iter().find(|container| {
+            container
+                .names
+                .as_ref()
+                .map(|names| {
+                    names
+                        .iter()
+                        .any(|n| n == name || n == &format!("/{}", name))
+                })
+                .unwrap_or(false)
+        }) {
+            tracing::debug!(target: "composer", "Container {} already exists", name);
+            let id = container
+                .id
+                .clone()
+                .ok_or_else(|| eyre::eyre!("No container ID found"))?;
+
+            if overwrite {
+                self.daemon
+                    .remove_container(&id, None::<RemoveContainerOptions>)
+                    .await?;
+                tracing::debug!(target: "composer", "Removed existing docker container {}", name);
+            } else {
+                return Ok(ContainerCreateResponse {
+                    id,
+                    warnings: vec![],
+                });
+            }
+        }
+
         let res = self
             .daemon
-            .create_container(Some(create_options), config.into())
+            .create_container(Some(create_options), config)
             .await?;
 
         tracing::debug!(target: "composer", "Created docker container {} with ID: {}", name, res.id);

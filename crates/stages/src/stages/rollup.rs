@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use eyre::Result;
+use op_primitives::RollupClient;
 use std::process::Command;
 
 /// Rollup Stage
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Rollup {
     rollup_port: Option<u16>,
-    rollup_client: String,
+    rollup_client: RollupClient,
 }
 
 #[async_trait]
@@ -24,7 +25,7 @@ impl crate::Stage for Rollup {
         let start_rollup = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "rollup-client"])
             .env("PWD", &docker_dir)
-            .env("ROLLUP_CLIENT_CHOICE", &self.rollup_client)
+            .env("ROLLUP_CLIENT_CHOICE", &self.rollup_client.to_string())
             .current_dir(docker_dir)
             .output()?;
 
@@ -42,7 +43,7 @@ impl crate::Stage for Rollup {
 
 impl Rollup {
     /// Creates a new stage.
-    pub fn new(rollup_port: Option<u16>, rollup_client: String) -> Self {
+    pub fn new(rollup_port: Option<u16>, rollup_client: RollupClient) -> Self {
         Self {
             rollup_port,
             rollup_client,
