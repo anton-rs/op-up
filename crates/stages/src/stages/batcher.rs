@@ -25,7 +25,7 @@ impl crate::Stage for Batcher {
         let addresses_json = self.artifacts.l1_deployments();
         let addresses = crate::json::read_json(&addresses_json)?;
 
-        let genesis_rollup_file = self.monorepo.genesis_rollup();
+        let genesis_rollup_file = self.artifacts.rollup_genesis();
         let rollup_config = crate::json::read_json(&genesis_rollup_file)?;
         let start_batcher = Command::new("docker-compose")
             .args(["up", "-d", "--no-deps", "--build", "batcher"])

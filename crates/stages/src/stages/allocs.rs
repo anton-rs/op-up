@@ -17,7 +17,7 @@ impl crate::Stage for Allocs {
     async fn execute(&self) -> Result<()> {
         tracing::info!(target: "stages", "Executing allocs stage");
 
-        let l2_genesis_file = self.monorepo.l2_genesis();
+        let l2_genesis_file = self.artifacts.l2_genesis();
         if l2_genesis_file.exists() {
             tracing::info!(target: "stages", "l2 genesis file already found");
             return Ok(());
