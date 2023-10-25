@@ -36,7 +36,7 @@ impl Default for MonorepoConfig {
         Self {
             source: MonorepoSource::Git,
             directory_name: "optimism".to_string(),
-            git_url: "git@github.com:ethereum-optimism/optimism.git".to_string(),
+            git_url: "https://github.com/ethereum-optimism/optimism".to_string(),
             tarball_url: "https://github.com/ethereum-optimism/optimism/archive/develop.tar.gz"
                 .to_string(),
             force: false,
