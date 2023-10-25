@@ -97,8 +97,8 @@ impl Stages<'_> {
             Box::new(l2_exec::Executor::new(
                 self.config.l2_client_port,
                 self.config.l2_client,
-                // Arc::clone(&composer),
-                // Arc::clone(&artifacts),
+                Arc::clone(&composer),
+                Arc::clone(&artifacts),
             )),
             Box::new(rollup::Rollup::new(
                 self.config.rollup_client_port,
