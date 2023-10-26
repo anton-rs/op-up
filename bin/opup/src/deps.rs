@@ -23,7 +23,7 @@ pub struct DependencyManager;
 
 impl DependencyManager {
     /// Default binaries to check for.
-    pub const DEFAULT_BINARIES: &'static [&'static str] = &["docker", "curl", "tar"];
+    pub const DEFAULT_BINARIES: &'static [&'static str] = &["docker", "curl", "tar", "make"];
 
     /// Linux package managers to check for.
     #[cfg(target_os = "linux")]
@@ -154,6 +154,47 @@ impl DependencyManager {
         let mut foundryup_command = Command::new("foundryup");
         let output = foundryup_command.output()?;
         tracing::info!("Foundryup executed with output: {}", output.status);
+
+        Ok(())
+    }
+
+    /// Installs Go.
+    #[instrument(name = "deps")]
+    pub fn go() -> Result<()> {
+        if Self::check_binary("go").is_some() {
+            tracing::debug!("Go already installed");
+            return Ok(());
+        }
+        tracing::info!("Installing Go");
+
+        if cfg!(target_os = "macos") {
+            match Command::new("brew")
+                .arg("install")
+                .arg("go")
+                .output()
+            {
+                Ok(out) => tracing::info!("Installed Go with output: {:?}", out.status),
+                Err(e) => tracing::warn!("Failed to install Go with err: {:?}", e),
+            }
+        } else if cfg!(target_os = "linux") {
+            let Some((pm_name, pm_arg)) = Self::package_manager() else {
+                tracing::warn!("Failed to find package manager to install Go");
+                return Err(eyre::eyre!("Failed to find package manager to install Go"));
+            };
+            match Command::new(pm_name)
+                .arg(pm_arg)
+                .arg("golang-go")
+                .output()
+            {
+                Ok(out) => tracing::info!("Installed Go with output: {:?}", out.status),
+                Err(e) => tracing::warn!("Failed to install Go with err: {:?}", e),
+            }
+        } else {
+            tracing::warn!(
+                "Automatic install not supported for OS: {}",
+                std::env::consts::OS
+            );
+        }
 
         Ok(())
     }
