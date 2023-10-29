@@ -92,11 +92,6 @@ impl Monorepo {
         self.devnet().join("genesis-l1.json")
     }
 
-    // /// Returns the L2 genesis file.
-    // pub fn l2_genesis(&self) -> PathBuf {
-    //     self.devnet().join("genesis-l2.json")
-    // }
-
     /// Contracts directory.
     pub fn contracts(&self) -> PathBuf {
         self.path().join("packages/contracts-bedrock")

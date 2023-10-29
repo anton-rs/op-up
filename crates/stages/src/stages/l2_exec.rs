@@ -16,6 +16,8 @@ pub struct Executor {
     artifacts: Arc<Artifacts>,
 }
 
+const CONTAINER_NAME: &str = "opup-l2";
+
 #[async_trait]
 impl crate::Stage for Executor {
     /// Executes the L2 Executor Stage.
@@ -97,7 +99,7 @@ impl Executor {
 
         let container_id = self
             .l2_exec
-            .create_container("opup-l2", config, true)
+            .create_container(CONTAINER_NAME, config, true)
             .await?
             .id;
         tracing::info!(target: "stages", "l2 container created: {}", container_id);

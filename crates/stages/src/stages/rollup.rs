@@ -17,6 +17,8 @@ pub struct Rollup {
     artifacts: Arc<Artifacts>,
 }
 
+const CONTAINER_NAME: &str = "opup-rollup";
+
 #[async_trait]
 impl crate::Stage for Rollup {
     /// Executes the [Rollup] stage.
@@ -135,7 +137,7 @@ impl Rollup {
 
         let container_id = self
             .rollup_exec
-            .create_container("opup-rollup", config, true)
+            .create_container(CONTAINER_NAME, config, true)
             .await?
             .id;
         tracing::info!(target: "stages", "rollup container created: {}", container_id);

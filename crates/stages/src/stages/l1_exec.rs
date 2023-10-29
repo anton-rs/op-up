@@ -19,6 +19,8 @@ pub struct Executor {
     artifacts: Arc<Artifacts>,
 }
 
+const CONTAINER_NAME: &str = "opup-l1";
+
 #[async_trait]
 impl crate::Stage for Executor {
     /// Executes the L1 Executor Stage.
@@ -103,7 +105,7 @@ impl Executor {
 
         let container_id = self
             .l1_exec
-            .create_container("opup-l1", config, true)
+            .create_container(CONTAINER_NAME, config, true)
             .await?
             .id;
 
