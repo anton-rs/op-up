@@ -30,7 +30,7 @@ pub use bollard::service::HostConfig;
 pub use bollard::volume::CreateVolumeOptions;
 pub use build_context::BuildContext;
 
-/// Utilities for Docker operations
+/// Utilities for building Docker images
 mod build_context;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
@@ -184,7 +184,7 @@ impl Composer {
 
             if overwrite {
                 self.daemon
-                    .remove_container(&id, None::<RemoveContainerOptions>)
+                    .remove_container(name, None::<RemoveContainerOptions>)
                     .await?;
                 tracing::debug!(target: "composer", "Removed existing docker container {}", name);
             } else {

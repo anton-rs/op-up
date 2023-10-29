@@ -79,11 +79,11 @@ impl Rollup {
             RUN make op-node VERSION="$VERSION" GOOS=$TARGETOS GOARCH=$TARGETARCH
             FROM alpine:3.18
             COPY --from=builder /app/op-node/bin/op-node /usr/local/bin
-            CMD ["op-node"]
+            COPY op-node-entrypoint.sh /op-node-entrypoint.sh
+            ENTRYPOINT ["/bin/sh", "/op-node-entrypoint.sh"]
         "#;
 
         let context = BuildContext::from_dockerfile(dockerfile)
-            .add_build_arg("VERSION", "v0.0.0")
             .add_build_arg("BUILDPLATFORM", "linux/arm64") // TODO: this should be dynamic
             .add_build_arg("TARGETOS", "linux")
             .add_build_arg("TARGETARCH", "arm64")
@@ -135,7 +135,7 @@ impl Rollup {
 
         let container_id = self
             .rollup_exec
-            .create_container(&self.rollup_client.to_string(), config, true)
+            .create_container("opup-rollup-node", config, true)
             .await?
             .id;
         tracing::info!(target: "stages", "rollup container created: {}", container_id);

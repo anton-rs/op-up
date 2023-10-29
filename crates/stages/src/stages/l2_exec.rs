@@ -97,7 +97,7 @@ impl Executor {
 
         let container_id = self
             .l2_exec
-            .create_container(&self.l2_client.to_string(), config, true)
+            .create_container("opup-l2", config, true)
             .await?
             .id;
         tracing::info!(target: "stages", "l2 container created: {}", container_id);

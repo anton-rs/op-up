@@ -103,7 +103,7 @@ impl Executor {
 
         let container_id = self
             .l1_exec
-            .create_container(&self.l1_client.to_string(), config, true)
+            .create_container("opup-l1", config, true)
             .await?
             .id;
 
