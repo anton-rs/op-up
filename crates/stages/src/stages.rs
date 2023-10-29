@@ -138,6 +138,9 @@ impl Stages<'_> {
         ));
         // let artifacts = Arc::new(Artifacts::from(self.config.artifacts.as_path()));
 
+        // Create the default network for OPUP components.
+        composer.create_default_network().await?;
+
         let docker_stages = self.docker(artifacts, monorepo, composer);
         let inner = self.inner.as_ref().unwrap_or(&docker_stages);
 
