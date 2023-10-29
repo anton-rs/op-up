@@ -17,7 +17,7 @@ use bollard::{
     },
     exec::{CreateExecOptions, StartExecResults},
     image::BuildImageOptions,
-    network::CreateNetworkOptions,
+    network::{CreateNetworkOptions, ListNetworksOptions},
     service::{ContainerCreateResponse, ContainerSummary, EndpointSettings, Volume},
     Docker,
 };
@@ -89,7 +89,22 @@ impl Composer {
     }
 
     /// Create a Docker network with the specified configs.
+    ///
+    /// NOTE: This method will overwrite any existing network with the same name.
     pub async fn create_network(&self, mut config: CreateNetworkOptions<&str>) -> Result<()> {
+        let existing_networks = self
+            .daemon
+            .list_networks(None::<ListNetworksOptions<&str>>)
+            .await?;
+
+        if existing_networks
+            .iter()
+            .any(|network| network.name == Some(config.name.to_string()))
+        {
+            tracing::debug!(target: "composer", "Network {} already exists. Replacing it.", config.name);
+            self.daemon.remove_network(config.name).await?;
+        }
+
         config.labels.insert("com.docker.compose.project", "op-up");
         let network = self.daemon.create_network(config).await?;
 

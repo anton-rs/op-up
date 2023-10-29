@@ -20,6 +20,7 @@ pub async fn test_basic_docker_composer() -> eyre::Result<()> {
         };
 
         composer.create_image(image_config).await?;
+        composer.create_default_network().await?;
 
         // 2. Create the container with the new image
         let container_config = Config {
