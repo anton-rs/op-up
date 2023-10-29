@@ -5,7 +5,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use op_composer::{bind_host_port, Composer, Config, CreateVolumeOptions, HostConfig};
+use op_composer::{
+    bind_host_port, BuildContext, Composer, Config, CreateVolumeOptions, HostConfig,
+};
 use op_primitives::Artifacts;
 
 /// L1 Execution Client Stage
@@ -63,11 +65,9 @@ impl Executor {
             ENTRYPOINT ["/bin/sh", "/geth-entrypoint.sh"]
         "#;
 
-        let geth_entrypoint = std::fs::read(working_dir.join("geth-entrypoint.sh"))?;
-        let build_context_files = [("geth-entrypoint.sh", geth_entrypoint.as_slice())];
-        self.l1_exec
-            .build_image(&image_name, dockerfile, &build_context_files)
-            .await?;
+        let context = BuildContext::from_dockerfile(dockerfile)
+            .add_file(working_dir.join("geth-entrypoint.sh"), "geth-entrypoint.sh");
+        self.l1_exec.build_image(&image_name, context).await?;
 
         let l1_data_volume = CreateVolumeOptions {
             name: "l1_data",

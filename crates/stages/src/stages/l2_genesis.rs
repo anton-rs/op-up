@@ -19,8 +19,9 @@ impl crate::Stage for L2Genesis {
         tracing::info!(target: "stages", "Executing l2 genesis stage");
 
         // Artifacts paths
-        let l2_genesis = self.artifacts.l2_genesis();
-        let rollup_genesis = self.artifacts.rollup_genesis();
+        let l2_genesis_artifact = self.artifacts.l2_genesis();
+        let rollup_genesis_artifact = self.artifacts.rollup_genesis();
+        let p2p_node_key_artifact = self.artifacts.p2p_node_key();
 
         // Monorepo paths
         let deploy_config = self.monorepo.deploy_config();
@@ -32,13 +33,20 @@ impl crate::Stage for L2Genesis {
         let devnet_deploys = path_to_str!(devnet_deploys)?;
         let op_node_dir = self.monorepo.op_node_dir();
 
-        if l2_genesis.exists() && rollup_genesis.exists() {
+        if !p2p_node_key_artifact.exists() {
+            tracing::info!(target: "stages", "Creating p2p node key...");
+            // TODO: take this from the TOML stack config
+            let p2p_node_key = "dae4671006c60a3619556ace98eca6f6e092948d05b13070a27ac492a4fba419";
+            std::fs::write(&p2p_node_key_artifact, p2p_node_key)?;
+        }
+
+        if l2_genesis_artifact.exists() && rollup_genesis_artifact.exists() {
             tracing::info!(target: "stages", "L2 and rollup genesis already found.");
             return Ok(());
         }
 
-        let l2_genesis_str = path_to_str!(l2_genesis)?;
-        let rollup_genesis_str = path_to_str!(rollup_genesis)?;
+        let l2_genesis_str = path_to_str!(l2_genesis_artifact)?;
+        let rollup_genesis_str = path_to_str!(rollup_genesis_artifact)?;
 
         tracing::info!(target: "stages", "Creating L2 and rollup genesis...");
         let l1_url = self.l1_url.clone().unwrap_or(op_config::L1_URL.to_owned());

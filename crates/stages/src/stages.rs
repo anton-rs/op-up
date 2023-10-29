@@ -104,6 +104,7 @@ impl Stages<'_> {
                 self.config.rollup_client_port,
                 self.config.rollup_client,
                 Arc::clone(&composer),
+                Arc::clone(&monorepo),
                 Arc::clone(&artifacts),
             )),
             Box::new(proposer::Proposer::new(Arc::clone(&artifacts))),

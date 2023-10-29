@@ -59,6 +59,10 @@ impl Artifacts {
         self.path().join("jwt-secret.txt")
     }
 
+    pub fn p2p_node_key(&self) -> PathBuf {
+        self.path().join("p2p-node-key.txt")
+    }
+
     /// Create the artifacts directory if it does not exist.
     pub fn create(&self) -> Result<()> {
         if !self.pwd.exists() {

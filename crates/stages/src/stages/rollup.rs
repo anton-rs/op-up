@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 use eyre::Result;
-use op_composer::{Composer, CreateVolumeOptions};
-use op_primitives::{Artifacts, RollupClient};
+use maplit::hashmap;
+use op_composer::{
+    bind_host_port, BuildContext, Composer, Config, CreateVolumeOptions, HostConfig,
+};
+use op_primitives::{Artifacts, Monorepo, RollupClient};
 use std::sync::Arc;
 
 /// Rollup Stage
@@ -10,6 +13,7 @@ pub struct Rollup {
     rollup_port: Option<u16>,
     rollup_client: RollupClient,
     rollup_exec: Arc<Composer>,
+    monorepo: Arc<Monorepo>,
     artifacts: Arc<Artifacts>,
 }
 
@@ -32,12 +36,14 @@ impl Rollup {
         rollup_port: Option<u16>,
         rollup_client: RollupClient,
         rollup_exec: Arc<Composer>,
+        monorepo: Arc<Monorepo>,
         artifacts: Arc<Artifacts>,
     ) -> Self {
         Self {
             rollup_port,
             rollup_client,
             rollup_exec,
+            monorepo,
             artifacts,
         }
     }
@@ -46,13 +52,16 @@ impl Rollup {
     pub async fn start_op_node(&self) -> Result<()> {
         let image_name = "opup-op-node".to_string();
         let working_dir = project_root::get_project_root()?.join("docker");
-        // let rollup_genesis = self.artifacts.rollup_genesis();
-        // let rollup_genesis = rollup_genesis.to_string_lossy();
-        // let jwt_secret = self.artifacts.jwt_secret();
-        // let jwt_secret = jwt_secret.to_string_lossy();
+        let monorepo = self.monorepo.path();
+        let rollup_genesis = self.artifacts.rollup_genesis();
+        let rollup_genesis = rollup_genesis.to_string_lossy();
+        let jwt_secret = self.artifacts.jwt_secret();
+        let jwt_secret = jwt_secret.to_string_lossy();
+        let p2p_node_key = self.artifacts.p2p_node_key();
+        let p2p_node_key = p2p_node_key.to_string_lossy();
 
-        // TODO: Use existing op-node docker image instead of manually building this
         let dockerfile = r#"
+            ARG BUILDPLATFORM
             FROM --platform=$BUILDPLATFORM golang:1.21.1-alpine3.18 as builder
             ARG VERSION=v0.0.0
             RUN apk add --no-cache make gcc musl-dev linux-headers git jq bash
@@ -73,22 +82,65 @@ impl Rollup {
             CMD ["op-node"]
         "#;
 
-        // let rollup_entrypoint = std::fs::read(working_dir.join("rollup-entrypoint.sh"))?;
-        // let build_context_files = [("rollup-entrypoint.sh", rollup_entrypoint.as_slice())];
-        // self.rollup_exec
-        //     .build_image(&image_name, dockerfile, &build_context_files)
-        //     .await?;
+        let context = BuildContext::from_dockerfile(dockerfile)
+            .add_build_arg("VERSION", "v0.0.0")
+            .add_build_arg("BUILDPLATFORM", "linux/arm64") // TODO: this should be dynamic
+            .add_build_arg("TARGETOS", "linux")
+            .add_build_arg("TARGETARCH", "arm64")
+            .add_file(monorepo.join("go.mod"), "go.mod")
+            .add_file(monorepo.join("go.sum"), "go.sum")
+            .add_dir(monorepo.join("op-node"), "op-node")
+            .add_dir(monorepo.join("op-chain-ops"), "op-chain-ops")
+            .add_dir(monorepo.join("op-service"), "op-service")
+            .add_dir(monorepo.join("op-bindings"), "op-bindings")
+            .add_file(
+                working_dir.join("op-node-entrypoint.sh"),
+                "op-node-entrypoint.sh",
+            );
+        self.rollup_exec.build_image(&image_name, context).await?;
 
-        let rollup_data_volume = CreateVolumeOptions {
-            name: "rollup_data",
+        let op_log_volume = CreateVolumeOptions {
+            name: "op_log",
             driver: "local",
             ..Default::default()
         };
-        self.rollup_exec.create_volume(rollup_data_volume).await?;
+        self.rollup_exec.create_volume(op_log_volume).await?;
 
-        // TODO: Create container
+        let config = Config {
+            image: Some(image_name),
+            working_dir: Some(working_dir.to_string_lossy().to_string()),
+            exposed_ports: Some(hashmap! {
+                "8545".to_string() => hashmap!{},
+                "6060".to_string() => hashmap!{},
+                "9003".to_string() => hashmap!{},
+                "7300".to_string() => hashmap!{},
+            }),
+            host_config: Some(HostConfig {
+                port_bindings: Some(hashmap! {
+                    "8545".to_string() => bind_host_port(7545),
+                    "6060".to_string() => bind_host_port(6060),
+                    "9003".to_string() => bind_host_port(9003),
+                    "7300".to_string() => bind_host_port(7300),
+                }),
+                binds: Some(vec![
+                    "op_log:/op_log".to_string(),
+                    format!("{}:/rollup.json", rollup_genesis),
+                    format!("{}:/config/test-jwt-secret.txt", jwt_secret),
+                    format!("{}:/config/p2p-node-key.txt", p2p_node_key),
+                ]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
 
-        // TODO: start container
+        let container_id = self
+            .rollup_exec
+            .create_container(&self.rollup_client.to_string(), config, true)
+            .await?
+            .id;
+        tracing::info!(target: "stages", "rollup container created: {}", container_id);
+
+        self.rollup_exec.start_container(&container_id).await?;
 
         let rollup_port = self.rollup_port.unwrap_or(op_config::ROLLUP_PORT);
         crate::net::wait_up(rollup_port, 30, 1)?;

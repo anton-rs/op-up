@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use eyre::Result;
 use maplit::hashmap;
-use op_composer::{bind_host_port, Composer, Config, CreateVolumeOptions, HostConfig};
+use op_composer::{
+    bind_host_port, BuildContext, Composer, Config, CreateVolumeOptions, HostConfig,
+};
 use op_primitives::{Artifacts, L2Client};
 use std::sync::Arc;
 
@@ -60,11 +62,9 @@ impl Executor {
             ENTRYPOINT ["/bin/sh", "/geth-entrypoint.sh"]
         "#;
 
-        let geth_entrypoint = std::fs::read(working_dir.join("geth-entrypoint.sh"))?;
-        let build_context_files = [("geth-entrypoint.sh", geth_entrypoint.as_slice())];
-        self.l2_exec
-            .build_image(&image_name, dockerfile, &build_context_files)
-            .await?;
+        let context = BuildContext::from_dockerfile(dockerfile)
+            .add_file(working_dir.join("geth-entrypoint.sh"), "geth-entrypoint.sh");
+        self.l2_exec.build_image(&image_name, context).await?;
 
         let l2_data_volume = CreateVolumeOptions {
             name: "l2_data",
