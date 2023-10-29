@@ -135,7 +135,7 @@ impl Rollup {
 
         let container_id = self
             .rollup_exec
-            .create_container("opup-rollup-node", config, true)
+            .create_container("opup-rollup", config, true)
             .await?
             .id;
         tracing::info!(target: "stages", "rollup container created: {}", container_id);
