@@ -3,8 +3,8 @@
 set -exu
 
 exec op-node \
-      --l1=ws://l1:8546 \
-      --l2=http://l2:8551 \
+      --l1=ws://opup-l1:8546 \
+      --l2=http://opup-l2:8551 \
       --l2.jwt-secret=/config/test-jwt-secret.txt \
       --sequencer.enabled \
       --sequencer.l1-confs=0 \

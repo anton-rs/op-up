@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use eyre::Result;
-use op_primitives::Monorepo;
+use op_primitives::{Artifacts, Monorepo};
 use std::process::Command;
 use std::sync::Arc;
 
@@ -8,6 +8,7 @@ use std::sync::Arc;
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Prestate {
     monorepo: Arc<Monorepo>,
+    artifacts: Arc<Artifacts>,
 }
 
 #[async_trait]
@@ -17,7 +18,7 @@ impl crate::Stage for Prestate {
         tracing::info!(target: "stages", "Executing fault proof prestate stage");
 
         let monorepo = self.monorepo.path();
-        let l2_genesis_file = self.monorepo.l2_genesis();
+        let l2_genesis_file = self.artifacts.l2_genesis();
 
         if l2_genesis_file.exists() {
             tracing::info!(target: "stages", "l2 genesis file already found");
@@ -48,7 +49,10 @@ impl crate::Stage for Prestate {
 
 impl Prestate {
     /// Creates a new stage.
-    pub fn new(monorepo: Arc<Monorepo>) -> Self {
-        Self { monorepo }
+    pub fn new(monorepo: Arc<Monorepo>, artifacts: Arc<Artifacts>) -> Self {
+        Self {
+            monorepo,
+            artifacts,
+        }
     }
 }

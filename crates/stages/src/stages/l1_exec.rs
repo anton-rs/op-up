@@ -5,7 +5,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use op_composer::{bind_host_port, Composer, Config, CreateVolumeOptions, HostConfig};
+use op_composer::{
+    bind_host_port, BuildContext, Composer, Config, CreateVolumeOptions, HostConfig,
+};
 use op_primitives::Artifacts;
 
 /// L1 Execution Client Stage
@@ -17,6 +19,8 @@ pub struct Executor {
     artifacts: Arc<Artifacts>,
 }
 
+const CONTAINER_NAME: &str = "opup-l1";
+
 #[async_trait]
 impl crate::Stage for Executor {
     /// Executes the L1 Executor Stage.
@@ -24,11 +28,9 @@ impl crate::Stage for Executor {
         tracing::info!(target: "stages", "Executing l1 execution client stage");
 
         match self.l1_client {
-            L1Client::Geth => self.start_geth().await?,
+            L1Client::Geth => self.start_geth().await,
             _ => unimplemented!("l1 client not implemented: {}", self.l1_client),
         }
-
-        Ok(())
     }
 }
 
@@ -48,9 +50,9 @@ impl Executor {
         }
     }
 
-    /// Starts Geth in a docker container.
+    /// Starts Geth in a Docker container.
     pub async fn start_geth(&self) -> Result<()> {
-        let image_name = "opup-geth".to_string();
+        let image_name = "opup-l1-geth".to_string();
         let working_dir = project_root::get_project_root()?.join("docker");
         let l1_genesis = self.artifacts.l1_genesis();
         let l1_genesis = l1_genesis.to_string_lossy();
@@ -65,11 +67,9 @@ impl Executor {
             ENTRYPOINT ["/bin/sh", "/geth-entrypoint.sh"]
         "#;
 
-        let geth_entrypoint = std::fs::read(working_dir.join("geth-entrypoint.sh"))?;
-        let build_context_files = [("geth-entrypoint.sh", geth_entrypoint.as_slice())];
-        self.l1_exec
-            .build_image(&image_name, dockerfile, &build_context_files)
-            .await?;
+        let context = BuildContext::from_dockerfile(dockerfile)
+            .add_file(working_dir.join("geth-entrypoint.sh"), "geth-entrypoint.sh");
+        self.l1_exec.build_image(&image_name, context).await?;
 
         let l1_data_volume = CreateVolumeOptions {
             name: "l1_data",
@@ -91,7 +91,7 @@ impl Executor {
                 port_bindings: Some(hashmap! {
                     "8545".to_string() => bind_host_port(8545),
                     "8546".to_string() => bind_host_port(8546),
-                    "6060".to_string() => bind_host_port(7060), // TODO: double check this port
+                    "6060".to_string() => bind_host_port(7060),
                 }),
                 binds: Some(vec![
                     "l1_data:/db".to_string(),
@@ -105,7 +105,7 @@ impl Executor {
 
         let container_id = self
             .l1_exec
-            .create_container(&self.l1_client.to_string(), config, true)
+            .create_container(CONTAINER_NAME, config, true)
             .await?
             .id;
 
@@ -119,10 +119,6 @@ impl Executor {
         let l1_port = self.l1_port.unwrap_or(op_config::L1_PORT);
         crate::net::wait_up(l1_port, 10, 3)?;
         tracing::info!(target: "stages", "l1 container started on port: {}", l1_port);
-
-        // todo: do we need to do block here
-        // can we wait for the l1 client to be ready by polling?
-        std::thread::sleep(std::time::Duration::from_secs(10));
 
         Ok(())
     }

@@ -44,9 +44,23 @@ impl Artifacts {
         self.path().join("genesis-l1.json")
     }
 
+    /// Returns the l2 genesis fle path.
+    pub fn l2_genesis(&self) -> PathBuf {
+        self.path().join("genesis-l2.json")
+    }
+
+    /// Returns the genesis rollup file path.
+    pub fn rollup_genesis(&self) -> PathBuf {
+        self.path().join("genesis-rollup.json")
+    }
+
     /// Returns the jwt secret file path.
     pub fn jwt_secret(&self) -> PathBuf {
         self.path().join("jwt-secret.txt")
+    }
+
+    pub fn p2p_node_key(&self) -> PathBuf {
+        self.path().join("p2p-node-key.txt")
     }
 
     /// Create the artifacts directory if it does not exist.

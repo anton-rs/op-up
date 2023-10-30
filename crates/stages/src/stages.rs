@@ -65,7 +65,10 @@ impl Stages<'_> {
                 Arc::clone(&artifacts),
                 Arc::clone(&monorepo),
             )),
-            Box::new(prestate::Prestate::new(Arc::clone(&monorepo))),
+            Box::new(prestate::Prestate::new(
+                Arc::clone(&monorepo),
+                Arc::clone(&artifacts),
+            )),
             Box::new(allocs::Allocs::new(
                 Arc::clone(&artifacts),
                 Arc::clone(&monorepo),
@@ -82,21 +85,27 @@ impl Stages<'_> {
             Box::new(l1_exec::Executor::new(
                 self.config.l1_client_port,
                 self.config.l1_client,
-                composer,
+                Arc::clone(&composer),
                 Arc::clone(&artifacts),
             )),
             Box::new(l2_genesis::L2Genesis::new(
                 self.config.l1_client_url.clone(),
                 Arc::clone(&monorepo),
+                Arc::clone(&artifacts),
             )),
             Box::new(contracts::Contracts::new()),
             Box::new(l2_exec::Executor::new(
                 self.config.l2_client_port,
                 self.config.l2_client,
+                Arc::clone(&composer),
+                Arc::clone(&artifacts),
             )),
             Box::new(rollup::Rollup::new(
                 self.config.rollup_client_port,
                 self.config.rollup_client,
+                Arc::clone(&composer),
+                Arc::clone(&monorepo),
+                Arc::clone(&artifacts),
             )),
             Box::new(proposer::Proposer::new(Arc::clone(&artifacts))),
             Box::new(batcher::Batcher::new(

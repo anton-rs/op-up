@@ -8,7 +8,7 @@
 #![deny(unused_must_use, rust_2018_idioms)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, path::Path};
 
 use bollard::{
     container::{
@@ -28,10 +28,10 @@ pub use bollard::container::Config;
 pub use bollard::image::CreateImageOptions;
 pub use bollard::service::HostConfig;
 pub use bollard::volume::CreateVolumeOptions;
-pub use utils::bind_host_port;
+pub use build_context::BuildContext;
 
-/// Utilities for Docker operations
-mod utils;
+/// Utilities for building Docker images
+mod build_context;
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]
@@ -108,24 +108,27 @@ impl Composer {
     /// Build a Docker image from the specified Dockerfile and build context files.
     pub async fn build_image(
         &self,
-        name: &str,
-        dockerfile: &str,
-        build_context_files: &[(&str, &[u8])],
+        name: impl Into<String>,
+        build_context: BuildContext<impl AsRef<Path>>,
     ) -> Result<()> {
         let build_options = BuildImageOptions {
-            t: name,
-            dockerfile: "Dockerfile",
+            t: name.into(),
+            dockerfile: "Dockerfile".to_string(),
+            buildargs: build_context.buildargs.clone(),
             pull: true,
             ..Default::default()
         };
 
-        let files = utils::create_dockerfile_build_context(dockerfile, build_context_files)?;
+        let build_context = build_context.create_archive()?;
         let mut image_build_stream =
             self.daemon
-                .build_image(build_options, None, Some(files.into()));
+                .build_image(build_options, None, Some(build_context.into()));
 
         while let Some(build_info) = image_build_stream.next().await {
-            let res = build_info?;
+            let res = match build_info {
+                Ok(build_info) => build_info,
+                Err(e) => eyre::bail!("Error building docker image: {:?}", e),
+            };
             tracing::debug!(target: "composer", "Build info: {:?}", res);
         }
 
@@ -181,7 +184,7 @@ impl Composer {
 
             if overwrite {
                 self.daemon
-                    .remove_container(&id, None::<RemoveContainerOptions>)
+                    .remove_container(name, None::<RemoveContainerOptions>)
                     .await?;
                 tracing::debug!(target: "composer", "Removed existing docker container {}", name);
             } else {
@@ -306,4 +309,12 @@ impl Composer {
             }
         }
     }
+}
+
+/// Given a host port, bind it to the container.
+pub fn bind_host_port(host_port: u16) -> Option<Vec<bollard::service::PortBinding>> {
+    Some(vec![bollard::service::PortBinding {
+        host_ip: None,
+        host_port: Some(host_port.to_string()),
+    }])
 }
