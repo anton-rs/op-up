@@ -12,12 +12,13 @@ use std::{collections::HashMap, fmt::Debug, path::Path};
 
 use bollard::{
     container::{
-        CreateContainerOptions, ListContainersOptions, LogOutput, RemoveContainerOptions,
-        StartContainerOptions, StopContainerOptions,
+        CreateContainerOptions, ListContainersOptions, LogOutput, NetworkingConfig,
+        RemoveContainerOptions, StartContainerOptions, StopContainerOptions,
     },
     exec::{CreateExecOptions, StartExecResults},
     image::BuildImageOptions,
-    service::{ContainerCreateResponse, ContainerSummary, Volume},
+    network::{CreateNetworkOptions, ListNetworksOptions},
+    service::{ContainerCreateResponse, ContainerSummary, EndpointSettings, Volume},
     Docker,
 };
 use eyre::{bail, Result};
@@ -32,6 +33,9 @@ pub use build_context::BuildContext;
 
 /// Utilities for building Docker images
 mod build_context;
+
+/// The default Docker network name.
+pub const DEFAULT_NETWORK_NAME: &str = "opup-net";
 
 /// The Composer is responsible for managing the OP-UP docker containers.
 #[derive(Debug)]
@@ -73,6 +77,39 @@ impl Composer {
             .list_containers(Some(list_options))
             .await
             .map_err(Into::into)
+    }
+
+    /// Create the default Docker network for OP-UP components.
+    pub async fn create_default_network(&self) -> Result<()> {
+        self.create_network(CreateNetworkOptions {
+            name: DEFAULT_NETWORK_NAME,
+            ..Default::default()
+        })
+        .await
+    }
+
+    /// Create a Docker network with the specified configs.
+    ///
+    /// NOTE: This method will overwrite any existing network with the same name.
+    pub async fn create_network(&self, mut config: CreateNetworkOptions<&str>) -> Result<()> {
+        let existing_networks = self
+            .daemon
+            .list_networks(None::<ListNetworksOptions<&str>>)
+            .await?;
+
+        if existing_networks
+            .iter()
+            .any(|network| network.name == Some(config.name.to_string()))
+        {
+            tracing::debug!(target: "composer", "Network {} already exists. Replacing it.", config.name);
+            self.daemon.remove_network(config.name).await?;
+        }
+
+        config.labels.insert("com.docker.compose.project", "op-up");
+        let network = self.daemon.create_network(config).await?;
+
+        tracing::debug!(target: "composer", "Created docker network: {:?}", network);
+        Ok(())
     }
 
     /// Create a Docker image from the specified options.
@@ -194,6 +231,18 @@ impl Composer {
                 });
             }
         }
+
+        // Add the container to the default network.
+        config
+            .networking_config
+            .get_or_insert(NetworkingConfig {
+                endpoints_config: HashMap::new(),
+            })
+            .endpoints_config
+            .insert(
+                DEFAULT_NETWORK_NAME.to_string(),
+                EndpointSettings::default(),
+            );
 
         let res = self
             .daemon

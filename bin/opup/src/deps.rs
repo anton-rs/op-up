@@ -168,11 +168,7 @@ impl DependencyManager {
         tracing::info!("Installing Go");
 
         if cfg!(target_os = "macos") {
-            match Command::new("brew")
-                .arg("install")
-                .arg("go")
-                .output()
-            {
+            match Command::new("brew").arg("install").arg("go").output() {
                 Ok(out) => tracing::info!("Installed Go with output: {:?}", out.status),
                 Err(e) => tracing::warn!("Failed to install Go with err: {:?}", e),
             }
@@ -181,11 +177,7 @@ impl DependencyManager {
                 tracing::warn!("Failed to find package manager to install Go");
                 return Err(eyre::eyre!("Failed to find package manager to install Go"));
             };
-            match Command::new(pm_name)
-                .arg(pm_arg)
-                .arg("golang-go")
-                .output()
-            {
+            match Command::new(pm_name).arg(pm_arg).arg("golang-go").output() {
                 Ok(out) => tracing::info!("Installed Go with output: {:?}", out.status),
                 Err(e) => tracing::warn!("Failed to install Go with err: {:?}", e),
             }
