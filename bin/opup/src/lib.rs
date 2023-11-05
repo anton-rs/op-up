@@ -10,3 +10,4 @@ pub(crate) mod list;
 pub(crate) mod runner;
 pub(crate) mod telemetry;
 pub(crate) mod up;
+pub(crate) mod watch;
