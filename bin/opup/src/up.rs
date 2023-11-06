@@ -61,6 +61,8 @@ impl UpCommand {
     /// Entrypoint
     #[instrument(name = "up", target = "run", skip(self))]
     pub fn run(&self) -> Result<()> {
+        crate::banners::banner()?;
+
         crate::runner::run_until_ctrl_c(async { self.execute().await })
     }
 }

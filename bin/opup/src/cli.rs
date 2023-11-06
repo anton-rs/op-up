@@ -29,6 +29,10 @@ pub enum Command {
     Clean,
     /// List op-up docker containers
     List,
+    /// Watch the devnet stack components.
+    /// This will output a refreshed view of the stack components
+    /// as they come online.
+    Watch,
     /// Install Dependencies
     Deps,
 }
@@ -38,8 +42,6 @@ pub fn run() -> Result<()> {
 
     crate::telemetry::init_tracing_subscriber(v)?;
 
-    crate::banners::banner()?;
-
     // Dispatch on the specified subcommand,
     // running the `up` subcommand by default.
     match command {
@@ -47,6 +49,7 @@ pub fn run() -> Result<()> {
         Some(command) => match command {
             Command::Up(up_command) => up_command.run(),
             Command::List => crate::list::run(),
+            Command::Watch => crate::watch::run(),
             Command::Down => unimplemented!("down command not yet implemented"),
             Command::Nuke => unimplemented!("nuke command not yet implemented"),
             Command::Clean => unimplemented!("clean command not yet implemented"),
