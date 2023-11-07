@@ -1,23 +1,27 @@
 # op-up
 
-[![Build Status]][actions]
+[![CI Build Status]][actions]
+[![Release]][actions]
+[![Tag Build Status]][actions]
 [![License]][mit-license]
 [![Docs]][Docs-rs]
 [![Latest Version]][crates.io]
-[![rustc 1.31+]][Rust 1.31]
+[![rustc 1.70+]][Rust 1.70]
 
-[Build Status]: https://img.shields.io/github/actions/workflow/status/anton-rs/op-up/ci.yml?branch=main
+[CI Build Status]: https://img.shields.io/github/actions/workflow/status/anton-rs/op-up/ci.yml?branch=main&label=build
+[Tag Build Status]: https://img.shields.io/github/actions/workflow/status/anton-rs/op-up/tag.yml?branch=main&label=tag
+[Release]: https://img.shields.io/github/actions/workflow/status/anton-rs/op-up/release.yml?branch=main&label=release
 [actions]: https://github.com/anton-rs/op-up/actions?query=branch%3Amain
 [Latest Version]: https://img.shields.io/crates/v/opup.svg
-[crates.io]: https://crates.io/crates/opup
-[rustc 1.31+]: https://img.shields.io/badge/rustc_1.31+-lightgray.svg
-[Rust 1.31]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
+[crates.io]: https://crates.io/crates/op-up
+[rustc 1.70+]: https://img.shields.io/badge/rustc_1.70+-lightgray.svg?label=msrv
+[Rust 1.70]: https://blog.rust-lang.org/2023/06/01/Rust-1.70.0.html
 [License]: https://img.shields.io/badge/license-MIT-7795AF.svg
 [mit-license]: https://github.com/anton-rs/op-up/blob/main/LICENSE.md
 [Docs-rs]: https://docs.rs/opup/
-[Docs]: https://img.shields.io/docsrs/opup.svg?color=319e8c&label=docs.rs
+[Docs]: https://img.shields.io/docsrs/op-up.svg?color=319e8c&label=docs.rs
 
-**Composable OP Stack Orchestration System.** op-up is in https://github.com/anton-rs/op-up/labels/alpha.
+**Composable OP Stack Orchestration System.** https://github.com/anton-rs/op-up/labels/alpha.
 
 ![](https://raw.githubusercontent.com/anton-rs/op-up/main/etc/op-up-banner.png)
 
